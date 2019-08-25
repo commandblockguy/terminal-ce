@@ -14,12 +14,13 @@
 #include <debug.h>
 
 #include "terminal.h"
+#include "escape.h"
 
 #define KEY_CHAR_COL_OFFSET 1
 
 const char key_chars_std  [5][8] = {
 	"\0\0\0\0\0\0#\0",
-	"0147,@\0\0",
+	"0147,@\0\x8",
 	".258(<\0\0",
 	"-369)>\0\0",
 	"\xA+-*/^\0\0"
@@ -88,10 +89,35 @@ void process_input(terminal_state_t *term) {
 		gfx_HorizLine(LCD_WIDTH / 2, LCD_HEIGHT - 1, LCD_WIDTH / 2);
 	}
 
-	for(i = 0; i < 7 - KEY_CHAR_COL_OFFSET; i++) {
+	/* Handle arrow key presses */
+	for(i = 0; i < 4; i++) {
+		if(keys[6] & (1 << i)) {
+			const char codes[4] = "BDCA";
+			const size_t len_diff = sizeof(CSI_SEQ) + 1;
+
+			/* Break if there is no room for the arrow key sequence */
+			if(len + len_diff > 24) break;
+
+			/* Output the CSI escape sequence */
+			memcpy(&buf[len], CSI_SEQ, sizeof(CSI_SEQ));
+
+			/* Output the character that corresponds to this arrow key */
+			buf[len + sizeof(CSI_SEQ)] = codes[i];
+
+			len += len_diff;
+		}
+	}
+
+	/* Handle regular keypresses */
+	/* Check each keypad group */
+	for(i = 0; i < 6 - KEY_CHAR_COL_OFFSET; i++) {
 		int j;
+		/* Check each bit of the group */
 		for(j = 0; j < 8; j++) {
+			/* If there is no room, stop */
 			if(len >= 24) goto skip_input;
+
+			/* Check if key is pressed */
 			if(keys[i + KEY_CHAR_COL_OFFSET] & (1 << j)) {
 				char (*key_chars)[8];
 				char val;

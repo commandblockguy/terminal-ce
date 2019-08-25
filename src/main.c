@@ -43,6 +43,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
     return USB_SUCCESS;
 }
 
+/* Temporary? input callback function that echoes data to the terminal */
 void echo(char *str, size_t len, void *data) {
     dbg_sprintf(dbgout, "%s", str);
     write_data(data, str, len);
@@ -77,7 +78,7 @@ void main(void) {
     gfx_Begin();
     gfx_FillScreen(gfx_black);
     fontlib_SetWindowFullScreen();
-    fontlib_SetCursorPosition(1, 1);
+    fontlib_SetCursorPosition(0, 0);
     fontlib_SetColors(gfx_white, gfx_black);
     fontlib_SetTransparency(false);
     fontlib_SetFirstPrintableCodePoint(32);
@@ -86,6 +87,10 @@ void main(void) {
     font = fontlib_GetFontByIndex(settings.font_pack_name, 1);
     if (font) {
         fontlib_SetFont(font, 0);
+        term.char_width = fontlib_GetStringWidth(" ");
+        term.char_height = fontlib_GetCurrentFontHeight();
+        term.cols = LCD_WIDTH / term.char_width;
+        term.rows = LCD_HEIGHT / term.char_height;
     } else {
         dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
         return;
@@ -93,6 +98,10 @@ void main(void) {
 
     term.input_callback = echo;
     term.callback_data = &term;
+    term.csr_x = 1;
+    term.csr_y = 1;
+    set_cursor_pos(&term, 1, 1, true);
+
 
     goto skip;
 

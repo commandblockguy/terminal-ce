@@ -16,7 +16,10 @@ typedef struct TerminalState {
 	uint8_t csr_y;
 	uint8_t rows;
 	uint8_t cols;
+	uint8_t char_width;
+	uint8_t char_height;
 	char esc_buf[32];
+	uint8_t esc_buf_len;
 	uint8_t held_keys[7];
 	bool mode_2nd;
 	bool mode_alpha;
@@ -25,5 +28,7 @@ typedef struct TerminalState {
 } terminal_state_t;
 
 void write_data(terminal_state_t *term, char *data, size_t size);
+
+void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y, bool update_fontlib);
 
 #endif
