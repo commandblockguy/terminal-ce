@@ -20,16 +20,20 @@
 #include <keypadc.h>
 #include <graphx.h>
 #include <fontlibc.h>
+#include <fileioc.h>
 
-#undef NDEBUG
-#define DEBUG
 #include <debug.h>
 
 #define usb_callback_data_t usb_device_t
 #include <usbdrvce.h>
 #include <srldrvce.h>
 
-static usb_error_t handleUsbEvent(usb_event_t event, void *event_data,
+#include "terminal.h"
+#include "settings.h"
+#include "input.h"
+
+/* Get the usb_device_t for each newly attached device */
+static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
                                   usb_callback_data_t *callback_data) {
     if(event == USB_DEVICE_ENABLED_EVENT) {
         if(!*callback_data) {
@@ -39,14 +43,36 @@ static usb_error_t handleUsbEvent(usb_event_t event, void *event_data,
     return USB_SUCCESS;
 }
 
+void echo(char *str, size_t len, void *data) {
+    dbg_sprintf(dbgout, "%s", str);
+    write_data(data, str, len);
+}
+
 void main(void) {
     usb_error_t error;
     usb_device_t dev = NULL;
     srl_device_t srl;
     static char srlbuf[4096];
 
-    dbg_sprintf(dbgout, "srl device: %p\n", &srl);
     fontlib_font_t *font;
+
+    settings_t settings;
+
+    terminal_state_t term = {0};
+
+    int i;
+
+    dbg_sprintf(dbgout, "\nProgram Started\n");
+
+    ti_CloseAll();
+
+    if(!read_settings(&settings)) {
+        write_default_settings();
+        if(!read_settings(&settings)) {
+            dbg_sprintf(dbgerr, "Failed to read settings.\n");
+            return;
+        }
+    }
 
     gfx_Begin();
     gfx_FillScreen(gfx_black);
@@ -65,7 +91,12 @@ void main(void) {
         return;
     }
 
-    if((error = usb_Init(handleUsbEvent, &dev, NULL, USB_DEFAULT_INIT_FLAGS))) goto exit;
+    term.input_callback = echo;
+    term.callback_data = &term;
+
+    goto skip;
+
+    if((error = usb_Init(handle_usb_event, &dev, NULL, USB_DEFAULT_INIT_FLAGS))) goto exit;
     
     while(!dev) {
         kb_Scan();
@@ -76,9 +107,15 @@ void main(void) {
         usb_WaitForEvents();
     }
 
+    dbg_sprintf(dbgout, "usb dev: %p\n", dev);
+
     if(srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), 115200));
 
-    dbg_sprintf(dbgout, "usb dev: %p\n", dev);
+    skip:
+
+    while(!kb_IsDown(kb_KeyClear)) {
+        process_input(&term);
+    }
 
     exit:
     usb_Cleanup();

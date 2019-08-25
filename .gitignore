@@ -2,4 +2,5 @@ bin/
 obj/
 src/gfx/*.c
 src/gfx/*.h
-src/main_old.c
+fonts/*.8xv
+fonts/*.bin
