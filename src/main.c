@@ -19,6 +19,7 @@
 
 #include <keypadc.h>
 #include <graphx.h>
+#include <fontlibc.h>
 
 #undef NDEBUG
 #define DEBUG
@@ -45,9 +46,24 @@ void main(void) {
     static char srlbuf[4096];
 
     dbg_sprintf(dbgout, "srl device: %p\n", &srl);
+    fontlib_font_t *font;
 
     gfx_Begin();
-    gfx_SetDrawBuffer();
+    gfx_FillScreen(gfx_black);
+    fontlib_SetWindowFullScreen();
+    fontlib_SetCursorPosition(1, 1);
+    fontlib_SetColors(gfx_white, gfx_black);
+    fontlib_SetTransparency(false);
+    fontlib_SetFirstPrintableCodePoint(32);
+    fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
+
+    font = fontlib_GetFontByIndex(settings.font_pack_name, 1);
+    if (font) {
+        fontlib_SetFont(font, 0);
+    } else {
+        dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
+        return;
+    }
 
     if((error = usb_Init(handleUsbEvent, &dev, NULL, USB_DEFAULT_INIT_FLAGS))) goto exit;
     

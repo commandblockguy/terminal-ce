@@ -13,3 +13,8 @@ DESCRIPTION ?= "Terminal CE"
 # ----------------------------
 
 include $(CEDEV)/include/.makefile
+
+fonts:
+	$(MAKE) -C fonts
+
+.PHONY: fonts
