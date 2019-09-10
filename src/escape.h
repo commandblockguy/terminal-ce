@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern const char CSI_SEQ[2];
+#define CSI_SEQ "\x1B\x5B"
 
 enum ControlChars {
 	BEL = 0x07,

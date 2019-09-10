@@ -9,11 +9,10 @@
 #include <string.h>
 
 #include <debug.h>
+#include <fontlibc.h>
 
 #include "terminal.h"
 #include "escape.h"
-
-const char CSI_SEQ[2] = "\x1B\x5B";
 
 void process_escape_sequence(terminal_state_t *term) {
 	/* Purge the buffer if a sequence finishes */
@@ -31,6 +30,20 @@ bool process_partial_sequence(terminal_state_t *term) {
 		case BEL:
 			dbg_sprintf(dbgerr, "DING\n");
 			return false;
+		case BS:
+			if(term->csr_x > 1) {
+				set_cursor_pos(term, term->csr_x - 1, term->csr_y, true);
+			}
+			return false;
+		case LF:
+		case VT:
+		case FF:
+			if(term->csr_y == term->rows) {
+				fontlib_DrawString("\n");
+				set_cursor_pos(term, term->csr_x, term->csr_y, true);
+			} else {
+				set_cursor_pos(term, term->csr_x, term->csr_y + 1, true);
+			}
 		case CR:
 			set_cursor_pos(term, 1, term->csr_y, true);
 			return false;
@@ -67,7 +80,9 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 		}
 
 		switch(seq[i]) {
-			case 'A': /* Up */
+			case 'F': /* CPL */
+				term->csr_x = 0;
+			case 'A': /* CUU */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y > args[0]) {
 					set_cursor_pos(term, term->csr_x, term->csr_y - args[0], true);
@@ -76,7 +91,9 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				}
 				return false;
 
-			case 'B': /* Down */
+			case 'E': /* CNL */
+				term->csr_x = 0;
+			case 'B': /* CUD */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y + args[0] < term->rows) {
 					set_cursor_pos(term, term->csr_x, term->csr_y + args[0], true);
@@ -85,7 +102,8 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				}
 				return false;
 
-			case 'C': /* Right */
+			case 'C': /* CUF */
+			case 'a': /* HPR */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x + args[0] < term->cols) {
 					set_cursor_pos(term, term->csr_x + args[0], term->csr_y, true);
@@ -94,7 +112,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				}
 				return false;
 
-			case 'D': /* Left */
+			case 'D': /* CUB */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x > args[0]) {
 					set_cursor_pos(term, term->csr_x - args[0], term->csr_y, true);
@@ -102,6 +120,32 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 					set_cursor_pos(term, 1, term->csr_y, true);
 				}
 				return false;
+
+			case 'G':  /* CHA */
+			case '`':  /* HPA */
+				if(args[0] == 0) args[0] = 1;
+				if(args[0] < term->cols) {
+					set_cursor_pos(term, args[0], term->csr_y, true);
+				} else {
+					set_cursor_pos(term, term->cols, term->csr_y, true);
+				}
+				return false;
+
+			case 'H':  /* CUP */ 
+			case 'f':  /* HVP */ {
+				uint8_t x = args[0], y = args[1];
+				if(x == 0) x = 1;
+				if(y == 0) y = 1;
+				if(x > term->cols) x = term->cols;
+				if(y > term->rows) y = term->rows;
+				set_cursor_pos(term, x, y, true);
+				return false;
+			}
+
+			case 'c':  /* DA */ {
+				const char *str = CSI_SEQ "?6c";
+				write_data(term, str, strlen(str));
+			}
 
 			default:
 				dbg_sprintf(dbgout, "Unknown CSI sequence %c (%x)\n", seq[i], seq[i]);
@@ -120,6 +164,11 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 		/* Handle CSI sequence */
 		case '[':
 			return process_csi_sequence(term, &seq[1], len - 1);
+
+		case 'M':
+			if(term->csr_y > 1) {
+				set_cursor_pos(term, term->csr_x, term->csr_y - 1, true);
+			}
 
 		default:
 			dbg_sprintf(dbgout, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);

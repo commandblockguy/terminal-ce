@@ -93,16 +93,16 @@ void process_input(terminal_state_t *term) {
 	for(i = 0; i < 4; i++) {
 		if(keys[6] & (1 << i)) {
 			const char codes[4] = "BDCA";
-			const size_t len_diff = sizeof(CSI_SEQ) + 1;
+			const size_t len_diff = strlen(CSI_SEQ) + 1;
 
 			/* Break if there is no room for the arrow key sequence */
 			if(len + len_diff > 24) break;
 
 			/* Output the CSI escape sequence */
-			memcpy(&buf[len], CSI_SEQ, sizeof(CSI_SEQ));
+			memcpy(&buf[len], CSI_SEQ, strlen(CSI_SEQ));
 
 			/* Output the character that corresponds to this arrow key */
-			buf[len + sizeof(CSI_SEQ)] = codes[i];
+			buf[len + strlen(CSI_SEQ)] = codes[i];
 
 			len += len_diff;
 		}
@@ -138,11 +138,28 @@ void process_input(terminal_state_t *term) {
 			}
 		}
 	}
+
+	if(get_key(keys, kb_KeyDel)) {
+		const char seq_del[] = CSI_SEQ "3~";
+		const size_t len_diff = strlen(seq_del);
+
+		/* If there is room for the sequence */
+		if(len + len_diff <= 24) {
+
+			dbg_sprintf(dbgout, "Sending delete sequence\n");
+
+			/* Output the CSI escape sequence for delete */
+			memcpy(&buf[len], seq_del, len_diff);
+
+			len += len_diff;
+		}
+	}
+
 	skip_input:
 
 	buf[len] = 0;
 
-	if(term->input_callback) {
+	if(len && term->input_callback) {
 		(*term->input_callback)(buf, len, term->callback_data);
 	}
 
