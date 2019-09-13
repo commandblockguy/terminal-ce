@@ -131,6 +131,16 @@ void process_input(terminal_state_t *term) {
 
 				val = key_chars[i][j];
 
+				/* Check if F1, the "ctrl key" is pressed */
+				if(kb_IsDown(kb_KeyYequ)) {
+					if(val >= 'a' && val <= 'z') val = val - 'a' + 1;
+					else if(val >= 'A' && val <= 'Z') val = val - 'A' + 1;
+					else {
+						dbg_sprintf(dbgout, "Bad ctrl char '%c'\n", val);
+						val = 0;
+					}
+				}
+
 				if(val) {
 					buf[len] = val;
 					len++;
