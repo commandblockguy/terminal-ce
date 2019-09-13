@@ -84,6 +84,10 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 		dbg_sprintf(dbgout, "CSI sequence %c(%u,%u)\n", seq[i], args[0], args[1]);
 
 		switch(seq[i]) {
+
+			case '?':  /* Ignore - optional but not required preceding arg list */
+				return true;
+
 			case 'F': /* CPL */
 				term->csr_x = 0;
 			case 'A': /* CUU */
