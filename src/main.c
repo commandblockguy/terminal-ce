@@ -89,7 +89,7 @@ void main(void) {
     fontlib_SetFirstPrintableCodePoint(32);
     fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
 
-    font = fontlib_GetFontByIndex(settings.font_pack_name, 1);
+    font = fontlib_GetFontByIndex(settings.font_pack_name, settings.reg_font);
     if (font) {
         fontlib_SetFont(font, 0);
         term.char_width = fontlib_GetStringWidth(" ");
