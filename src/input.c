@@ -145,9 +145,6 @@ void process_input(terminal_state_t *term) {
 
 		/* If there is room for the sequence */
 		if(len + len_diff <= 24) {
-
-			dbg_sprintf(dbgout, "Sending delete sequence\n");
-
 			/* Output the CSI escape sequence for delete */
 			memcpy(&buf[len], seq_del, len_diff);
 

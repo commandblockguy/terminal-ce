@@ -10,6 +10,7 @@
 
 #include <debug.h>
 #include <fontlibc.h>
+#include <graphx.h>
 
 #include "terminal.h"
 #include "escape.h"
@@ -39,6 +40,7 @@ bool process_partial_sequence(terminal_state_t *term) {
 		case VT:
 		case FF:
 			if(term->csr_y == term->rows) {
+				erase_cursor(term);
 				fontlib_DrawString("\n");
 				set_cursor_pos(term, term->csr_x, term->csr_y, true);
 			} else {
@@ -78,6 +80,8 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				continue;
 			}
 		}
+
+		dbg_sprintf(dbgout, "CSI sequence %c(%u,%u)\n", seq[i], args[0], args[1]);
 
 		switch(seq[i]) {
 			case 'F': /* CPL */
@@ -142,9 +146,76 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				return false;
 			}
 
+			case 'J':  /* ED */ {
+				uint8_t y = (term->csr_y - 1) * term->char_height;
+				switch(args[0]) {
+					default:
+						gfx_SetColor(gfx_black); //temp
+						gfx_FillRectangle(0, y + term->char_height, LCD_WIDTH, LCD_HEIGHT - (y + term->char_height) - 1);
+						break; // continue to EL
+
+					case 1:
+						gfx_SetColor(gfx_black); //temp
+						gfx_FillRectangle(0, 0, LCD_WIDTH, y);
+						break; // continue to EL
+
+					case 2:
+					case 3:
+						gfx_SetColor(gfx_black); //temp
+						gfx_FillRectangle(0, 0, LCD_WIDTH, LCD_HEIGHT - 1);
+						return false;
+				}
+			}
+
+			case 'K':  /* EL */ {
+				uint24_t x = (term->csr_x - 1) * term->char_width;
+				uint8_t y = (term->csr_y - 1) * term->char_height;
+				switch(args[0]) {
+					default:
+						/* Erase from cursor to end of line */
+						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_FillRectangle(x, y, LCD_WIDTH - x, term->char_height);
+						return false;
+
+					case 1:
+						/* Erase from start of line to cursor */
+						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_FillRectangle(0, y, LCD_WIDTH - x, term->char_height);
+						return false;
+
+					case 2:
+						/* Erase entire line */
+						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_FillRectangle(0, y, LCD_WIDTH, term->char_height);
+						return false;
+				}
+			}
+
+			case 'P':  /* DCH */ {
+				uint24_t src_x, dst_x, width;
+				uint8_t y;
+				if(args[0] == 0) args[0] = 1;
+
+				dst_x = (term->csr_x - 1) * term->char_width;
+				src_x = dst_x + args[0] * term->char_width;
+				width = LCD_WIDTH - src_x;
+				y = (term->csr_y - 1) * term->char_height;
+
+				if(src_x <= LCD_WIDTH) {
+					gfx_CopyRectangle(gfx_screen, gfx_screen, src_x, y, dst_x, y, width, term->char_height);
+				}
+
+				gfx_SetColor(gfx_black); // temp
+				gfx_FillRectangle(src_x + width, y, LCD_WIDTH - (src_x + width), term->char_height);
+
+				return false;
+			}
+
+
 			case 'c':  /* DA */ {
 				const char *str = CSI_SEQ "?6c";
 				write_data(term, str, strlen(str));
+				return false;
 			}
 
 			default:
@@ -165,10 +236,20 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 		case '[':
 			return process_csi_sequence(term, &seq[1], len - 1);
 
-		case 'M':
+		case 'M':  /* RI */
 			if(term->csr_y > 1) {
 				set_cursor_pos(term, term->csr_x, term->csr_y - 1, true);
 			}
+			return false;
+
+		case '7':  /* DECSC */
+			term->backup.csr_x = term->csr_x;
+			term->backup.csr_y = term->csr_y;
+			return false;
+
+		case '8':  /* DECRC */
+			set_cursor_pos(term, term->backup.csr_x, term->backup.csr_y, true);
+			return false;
 
 		default:
 			dbg_sprintf(dbgout, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);

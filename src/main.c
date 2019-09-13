@@ -36,6 +36,7 @@
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
                                   usb_callback_data_t *callback_data) {
     if(event == USB_DEVICE_ENABLED_EVENT) {
+        dbg_sprintf(dbgout, "Device enabled.\n");
         if(!*callback_data) {
             *callback_data = event_data;
         }
@@ -49,8 +50,12 @@ void echo(char *str, size_t len, void *data) {
     write_data(data, str, len);
 }
 
+void serial_out(char *str, size_t len, void *data) {
+    srl_Write(data, str, len);
+}
+
 void main(void) {
-    usb_error_t error;
+    usb_error_t error = 0;
     usb_device_t dev = NULL;
     srl_device_t srl;
     static char srlbuf[4096];
@@ -93,40 +98,67 @@ void main(void) {
         term.rows = LCD_HEIGHT / term.char_height;
     } else {
         dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
+        gfx_End();
         return;
     }
 
-    term.input_callback = echo;
-    term.callback_data = &term;
+    term.input_callback = serial_out;
+    term.callback_data = &srl;
     term.csr_x = 1;
     term.csr_y = 1;
     set_cursor_pos(&term, 1, 1, true);
 
 
-    goto skip;
+    //goto skip;
 
     if((error = usb_Init(handle_usb_event, &dev, NULL, USB_DEFAULT_INIT_FLAGS))) goto exit;
-    
+
     while(!dev) {
+        uint8_t val;
         kb_Scan();
         if(kb_IsDown(kb_KeyClear)) {
             goto exit;
-            return;
         }
-        usb_WaitForEvents();
+        val = usb_HandleEvents();
+        if(val)
+            dbg_sprintf(dbgout, "%u\n", val);
     }
 
     dbg_sprintf(dbgout, "usb dev: %p\n", dev);
 
-    if(srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), 115200));
+    if((error = srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), 115200))) goto exit;
+
+    usb_HandleEvents();
+
+    dbg_sprintf(dbgout, "srl dev: %p\n", &srl);
 
     skip:
 
     while(!kb_IsDown(kb_KeyClear)) {
+        char buf[64];
+        uint8_t len = 0;
+
         process_input(&term);
+
+        while(len < 64) {
+            uint8_t last;
+            usb_HandleEvents();
+            last = srl_Read(&srl, buf, 64 - len);
+            if(!last) break;
+            len += last;
+        }
+
+        write_data(&term, buf, len);
     }
 
     exit:
+    if(error) {
+        char buf[4];
+        sprintf(buf, "0x%X\n", error);
+        fontlib_DrawString(buf);
+        dbg_sprintf(dbgout, "error %u\n", error);
+        while(!kb_IsDown(kb_KeyClear)) kb_Scan();
+    }
     usb_Cleanup();
     gfx_End();
 }
