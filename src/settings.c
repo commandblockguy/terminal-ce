@@ -14,7 +14,6 @@ settings_t default_settings = {
 	"GOHUFONT",
 	1,
 	0,
-	1,
 	0 // default colors
 };
 
@@ -32,6 +31,8 @@ bool read_settings(settings_t *settings) {
 
 	read = ti_Read(settings, sizeof(settings_t), 1, slot);
 
+	ti_Close(slot);
+
 	return read;
 }
 
@@ -44,6 +45,8 @@ bool write_settings(settings_t *settings) {
 	if(!slot) return false;
 
 	written = ti_Write(settings, sizeof(settings_t), 1, slot);
+
+	ti_Close(slot);
 
 	return written;
 }

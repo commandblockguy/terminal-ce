@@ -15,6 +15,7 @@
 
 #include "terminal.h"
 #include "escape.h"
+#include "menu.h"
 
 #define KEY_CHAR_COL_OFFSET 1
 
@@ -65,6 +66,12 @@ void process_input(terminal_state_t *term) {
 	for(i = 0; i < 7; i++) {
 		keys[i] = kb_Data[i + 1] & ~term->held_keys[i];
 		term->held_keys[i] = kb_Data[i + 1];
+	}
+
+	/* Handle F5 (menu) key */
+	if(get_key(keys, kb_KeyGraph)) {
+		menu(term);
+		return;	
 	}
 
 	/* Handle 2nd key */
@@ -134,7 +141,7 @@ void process_input(terminal_state_t *term) {
 				/* Check if F1, the "ctrl key" is pressed */
 				if(kb_IsDown(kb_KeyYequ)) {
 					if(val >= 'a' && val <= 'z') val = val - 'a' + 1;
-					else if(val >= 'A' && val <= 'Z') val = val - 'A' + 1;
+					else if(val >= 'A' && val <= '[') val = val - 'A' + 1;
 					else {
 						dbg_sprintf(dbgout, "Bad ctrl char '%c'\n", val);
 						val = 0;

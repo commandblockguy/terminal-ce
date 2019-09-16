@@ -17,7 +17,6 @@ typedef struct Settings {
 	char font_pack_name[8];
 	uint8_t reg_font;
 	uint8_t bold_font;
-	uint8_t italic_font;
 	uint8_t color_mode;
 	uint16_t colors[18];
 } settings_t;
