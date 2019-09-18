@@ -17,6 +17,8 @@
 #include "escape.h"
 #include "menu.h"
 
+#include "graphics.h"
+
 #define KEY_CHAR_COL_OFFSET 1
 
 const char key_chars_std  [5][8] = {
@@ -79,8 +81,8 @@ void process_input(terminal_state_t *term) {
 		term->mode_2nd = !term->mode_2nd;
 		dbg_sprintf(dbgout, "2nd mode: %u\n", term->mode_2nd);
 
-		gfx_SetColor(gfx_black);
-		if(term->mode_2nd) gfx_SetColor(0x3D);
+		gfx_SetColor(bg_color(&(term->graphics)));
+		if(term->mode_2nd) gfx_SetColor(COL_2ND);
 
 		gfx_HorizLine(0, LCD_HEIGHT - 1, LCD_WIDTH / 2);
 	}
@@ -90,8 +92,8 @@ void process_input(terminal_state_t *term) {
 		term->mode_alpha = !term->mode_alpha;
 		dbg_sprintf(dbgout, "Alpha mode: %u\n", term->mode_alpha);
 
-		gfx_SetColor(gfx_black);
-		if(term->mode_alpha) gfx_SetColor(0x27);
+		gfx_SetColor(bg_color(&(term->graphics)));
+		if(term->mode_alpha) gfx_SetColor(COL_ALPHA);
 		
 		gfx_HorizLine(LCD_WIDTH / 2, LCD_HEIGHT - 1, LCD_WIDTH / 2);
 	}

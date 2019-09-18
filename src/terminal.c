@@ -14,6 +14,7 @@
 
 #include "terminal.h"
 #include "escape.h"
+#include "graphics.h"
 
 void write_data(terminal_state_t *term, char *data, size_t size) {
 	char *current = data;
@@ -41,7 +42,7 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 }
 
 void erase_cursor(terminal_state_t *term) {
-	gfx_SetColor(gfx_black); // temp
+	gfx_SetColor(bg_color(&(term->graphics)));
 	gfx_SetPixel((term->csr_x - 1) * term->char_width, (term->csr_y - 1) * term->char_height);
 }
 

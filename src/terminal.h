@@ -16,6 +16,17 @@ typedef struct StateBackup {
 	uint8_t csr_y;
 } terminal_bkp_t;
 
+typedef struct graphics {
+	uint8_t fg_color;
+	uint8_t bg_color;
+	bool bold        : 1;
+	bool reverse     : 1;
+	bool underline   : 1;
+	bool conceal     : 1;
+	bool crossed     : 1;
+	uint8_t base_col : 3;
+} graphics_t;
+
 typedef struct TerminalState {
 	uint8_t csr_x;
 	uint8_t csr_y;
@@ -29,6 +40,7 @@ typedef struct TerminalState {
 	bool mode_2nd;
 	bool mode_alpha;
 	bool mode_ctrl;
+	graphics_t graphics;
 	void (*input_callback)(char* pressed, size_t length, void* callback_data);
 	void *callback_data;
 	terminal_bkp_t backup;

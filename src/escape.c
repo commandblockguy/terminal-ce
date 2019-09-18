@@ -14,6 +14,7 @@
 
 #include "terminal.h"
 #include "escape.h"
+#include "graphics.h"
 
 void process_escape_sequence(terminal_state_t *term) {
 	/* Purge the buffer if a sequence finishes */
@@ -36,7 +37,7 @@ bool process_partial_sequence(terminal_state_t *term) {
 				set_cursor_pos(term, term->csr_x - 1, term->csr_y, true);
 			}
 			return false;
-		case LF:
+		//case LF:
 		case VT:
 		case FF:
 			if(term->csr_y == term->rows) {
@@ -154,18 +155,18 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				uint8_t y = (term->csr_y - 1) * term->char_height;
 				switch(args[0]) {
 					default:
-						gfx_SetColor(gfx_black); //temp
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(0, y + term->char_height, LCD_WIDTH, LCD_HEIGHT - (y + term->char_height) - 1);
 						break; // continue to EL
 
 					case 1:
-						gfx_SetColor(gfx_black); //temp
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(0, 0, LCD_WIDTH, y);
 						break; // continue to EL
 
 					case 2:
 					case 3:
-						gfx_SetColor(gfx_black); //temp
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(0, 0, LCD_WIDTH, LCD_HEIGHT - 1);
 						return false;
 				}
@@ -177,19 +178,19 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				switch(args[0]) {
 					default:
 						/* Erase from cursor to end of line */
-						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(x, y, LCD_WIDTH - x, term->char_height);
 						return false;
 
 					case 1:
 						/* Erase from start of line to cursor */
-						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(0, y, LCD_WIDTH - x, term->char_height);
 						return false;
 
 					case 2:
 						/* Erase entire line */
-						gfx_SetColor(gfx_black); // temp - change to BG color
+						gfx_SetColor(bg_color(&(term->graphics)));
 						gfx_FillRectangle(0, y, LCD_WIDTH, term->char_height);
 						return false;
 				}
@@ -209,7 +210,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 					gfx_CopyRectangle(gfx_screen, gfx_screen, src_x, y, dst_x, y, width, term->char_height);
 				}
 
-				gfx_SetColor(gfx_black); // temp
+				gfx_SetColor(bg_color(&(term->graphics)));
 				gfx_FillRectangle(src_x + width, y, LCD_WIDTH - (src_x + width), term->char_height);
 
 				return false;
@@ -219,6 +220,12 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case 'c':  /* DA */ {
 				const char *str = CSI_SEQ "?6c";
 				write_data(term, str, strlen(str));
+				return false;
+			}
+
+			case 'm':  /* SGR */ {
+				sgr(term, args);
+				set_colors(&term->graphics);
 				return false;
 			}
 

@@ -32,6 +32,9 @@
 #include "settings.h"
 #include "input.h"
 
+#include "gfx/gfx.h"
+#include "graphics.h"
+
 #define ECHO
 //#define SERIAL
 
@@ -87,11 +90,15 @@ void main(void) {
 		}
 	}
 
+	term.graphics.fg_color = WHITE;
+	term.graphics.bg_color = BLACK;
+
 	gfx_Begin();
-	gfx_FillScreen(gfx_black);
+	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
+	gfx_FillScreen(term.graphics.bg_color);
 	fontlib_SetWindowFullScreen();
 	fontlib_SetCursorPosition(0, 0);
-	fontlib_SetColors(gfx_white, gfx_black);
+	set_colors(&term.graphics);
 	fontlib_SetTransparency(false);
 	fontlib_SetFirstPrintableCodePoint(32);
 	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
