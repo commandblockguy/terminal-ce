@@ -35,8 +35,8 @@
 #include "gfx/gfx.h"
 #include "graphics.h"
 
-#define ECHO
-//#define SERIAL
+//#define ECHO
+#define SERIAL
 
 #ifdef SERIAL
 /* Get the usb_device_t for each newly attached device */
@@ -93,23 +93,11 @@ void main(void) {
 	term.graphics.fg_color = WHITE;
 	term.graphics.bg_color = BLACK;
 
-	gfx_Begin();
-	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
-	gfx_FillScreen(term.graphics.bg_color);
-	fontlib_SetWindowFullScreen();
-	fontlib_SetCursorPosition(0, 0);
-	set_colors(&term.graphics);
-	fontlib_SetTransparency(false);
-	fontlib_SetFirstPrintableCodePoint(32);
-	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
-
 	font = fontlib_GetFontByIndex(settings.font_pack_name, settings.reg_font);
 	if (font) {
 		fontlib_SetFont(font, 0);
 		term.char_width = fontlib_GetStringWidth(" ");
 		term.char_height = fontlib_GetCurrentFontHeight();
-		term.cols = LCD_WIDTH / term.char_width;
-		term.rows = LCD_HEIGHT / term.char_height;
 	} else {
 		dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
 		gfx_End();
@@ -122,9 +110,8 @@ void main(void) {
 	term.input_callback = serial_out;
 	term.callback_data = &srl;
 #endif
-	term.csr_x = 1;
-	term.csr_y = 1;
-	set_cursor_pos(&term, 1, 1, true);
+
+	init_term(&term);
 
 
 #ifdef SERIAL

@@ -16,6 +16,8 @@
 #include "escape.h"
 #include "graphics.h"
 
+#include "gfx/gfx.h"
+
 void write_data(terminal_state_t *term, char *data, size_t size) {
 	char *current = data;
 	char *end = data + size;
@@ -65,4 +67,23 @@ void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y, bool update_fo
 	/* Draw the new cursor */
 	gfx_SetColor(gfx_red); // temp
 	gfx_SetPixel(x_px, y_px);
+}
+
+void init_term(terminal_state_t *term) {
+	gfx_Begin();
+	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
+	gfx_FillScreen(term->graphics.bg_color);
+	fontlib_SetWindowFullScreen();
+	fontlib_SetCursorPosition(0, 0);
+	set_colors(&term->graphics);
+	fontlib_SetTransparency(false);
+	fontlib_SetFirstPrintableCodePoint(32);
+	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
+
+	term->cols = LCD_WIDTH / term->char_width;
+	term->rows = LCD_HEIGHT / term->char_height;
+
+	term->csr_x = 1;
+	term->csr_y = 1;
+	set_cursor_pos(term, 1, 1, true);
 }

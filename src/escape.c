@@ -64,7 +64,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 	uint24_t args[MAX_CSI_ARGS] = {0};
 	uint8_t arg_num = 0;
 
-	uint8_t i;
+	uint8_t i, j;
 
 	/* Read each character in the sequence */
 	for(i = 0; i < len; i++) {
@@ -82,7 +82,12 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 		}
 
-		dbg_sprintf(dbgout, "CSI sequence %c(%u,%u)\n", seq[i], args[0], args[1]);
+		dbg_sprintf(dbgout, "CSI sequence %c(", seq[i]);
+		for(j = 0; j < 16; j++) {
+			dbg_sprintf(dbgout, "%u;", args[j]);
+			if(args[j + 1] == 0) break;
+		}
+		dbg_sprintf(dbgout, ")\n");
 
 		switch(seq[i]) {
 

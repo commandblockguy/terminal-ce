@@ -52,4 +52,6 @@ void erase_cursor(terminal_state_t *term);
 
 void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y, bool update_fontlib);
 
+void init_term(terminal_state_t *term);
+
 #endif
