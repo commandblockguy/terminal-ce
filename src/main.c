@@ -42,7 +42,7 @@
 /* Get the usb_device_t for each newly attached device */
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 								  usb_callback_data_t *callback_data) {
-	if(event == USB_DEVICE_ENABLED_EVENT) {
+	if(event == USB_DEVICE_ENABLED_EVENT || event == USB_HOST_CONFIGURE_EVENT) {
 		dbg_sprintf(dbgout, "Device enabled.\n");
 		if(!*callback_data) {
 			*callback_data = event_data;
@@ -116,7 +116,7 @@ void main(void) {
 
 #ifdef SERIAL
 
-	if((error = usb_Init(handle_usb_event, &dev, NULL, USB_DEFAULT_INIT_FLAGS))) goto exit;
+	if((error = usb_Init(handle_usb_event, &dev, srl_cdcStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
 
 	while(!dev) {
 		uint8_t val;
@@ -126,16 +126,20 @@ void main(void) {
 		}
 		val = usb_HandleEvents();
 		if(val)
-			dbg_sprintf(dbgout, "%u\n", val);
+			dbg_sprintf(dbgout, "error in HandleEvents %u\n", val);
 	}
 
 	dbg_sprintf(dbgout, "usb dev: %p\n", dev);
 
-	if((error = srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), 115200))) goto exit;
+	if((error = srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), SRL_INTERFACE_ANY))) goto exit;
 
 	usb_HandleEvents();
 
 	dbg_sprintf(dbgout, "srl dev: %p\n", &srl);
+
+	srl_SetRate(&srl, 115200);
+
+	dbg_sprintf(dbgout, "set rate\n");
 
 #endif
 
