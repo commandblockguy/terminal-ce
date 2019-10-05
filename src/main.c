@@ -153,7 +153,7 @@ void main(void) {
 		while(len < 64) {
 			uint8_t last;
 			usb_HandleEvents();
-			last = srl_Read(&srl, buf, 64 - len);
+			last = srl_Read(&srl, buf + len, 64 - len);
 			if(!last) break;
 			len += last;
 		}
