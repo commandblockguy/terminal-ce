@@ -42,11 +42,15 @@
 /* Get the usb_device_t for each newly attached device */
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 								  usb_callback_data_t *callback_data) {
-	if(event == USB_DEVICE_ENABLED_EVENT || event == USB_HOST_CONFIGURE_EVENT) {
-		dbg_sprintf(dbgout, "Device enabled.\n");
+	if(event == USB_DEVICE_CONNECTED_EVENT || event == USB_HOST_CONFIGURE_EVENT) {
+		dbg_sprintf(dbgout, "Device connected.\n");
 		if(!*callback_data) {
 			*callback_data = event_data;
 		}
+	}
+	if(event == USB_DEVICE_DISCONNECTED_EVENT) {
+		dbg_sprintf(dbgout, "Device disconnected.\n");
+		*callback_data = NULL;
 	}
 	return USB_SUCCESS;
 }
@@ -69,6 +73,7 @@ void main(void) {
 	usb_device_t dev = NULL;
 	srl_device_t srl;
 	static char srlbuf[4096];
+	uint8_t step = 0;
 
 	fontlib_font_t *font;
 
@@ -116,7 +121,8 @@ void main(void) {
 
 #ifdef SERIAL
 
-	if((error = usb_Init(handle_usb_event, &dev, srl_cdcStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
+	if((error = usb_Init(handle_usb_event, &dev, srl_GetCDCStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
+	step = 1;
 
 	while(!dev) {
 		uint8_t val;
@@ -132,6 +138,7 @@ void main(void) {
 	dbg_sprintf(dbgout, "usb dev: %p\n", dev);
 
 	if((error = srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), SRL_INTERFACE_ANY))) goto exit;
+	step = 2;
 
 	usb_HandleEvents();
 
@@ -153,19 +160,21 @@ void main(void) {
 		while(len < 64) {
 			uint8_t last;
 			usb_HandleEvents();
+			if(!dev) break;
 			last = srl_Read(&srl, buf + len, 64 - len);
 			if(!last) break;
 			len += last;
 		}
 
 		write_data(&term, buf, len);
+		if(!dev) break;
 #endif
 	}
 
 	exit:
 	if(error) {
 		char buf[4];
-		sprintf(buf, "0x%X\n", error);
+		sprintf(buf, "%u: 0x%X\n", step, error);
 		fontlib_DrawString(buf);
 		dbg_sprintf(dbgout, "error %u\n", error);
 		while(!kb_IsDown(kb_KeyClear)) kb_Scan();

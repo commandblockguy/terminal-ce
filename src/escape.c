@@ -92,7 +92,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 		switch(seq[i]) {
 
 			case '?':  /* Ignore - optional but not required preceding arg list */
-				return true;
+				continue;
 
 			case 'F': /* CPL */
 				term->csr_x = 0;
@@ -224,13 +224,18 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'c':  /* DA */ {
 				const char *str = CSI_SEQ "?6c";
-				write_data(term, str, strlen(str));
+				term->input_callback(str, strlen(str), term->callback_data);
 				return false;
 			}
 
 			case 'm':  /* SGR */ {
 				sgr(term, args);
 				set_colors(&term->graphics);
+				return false;
+			}
+
+			case 'r':  /* DECSTBM */ {
+				fontlib_SetWindow(0, (args[0] - 1) * term->char_height, LCD_WIDTH, (args[1] - args[0] + 1) * term->char_height);
 				return false;
 			}
 

@@ -79,7 +79,6 @@ void process_input(terminal_state_t *term) {
 	/* Handle 2nd key */
 	if(get_key(keys, kb_Key2nd)) {
 		term->mode_2nd = !term->mode_2nd;
-		dbg_sprintf(dbgout, "2nd mode: %u\n", term->mode_2nd);
 
 		gfx_SetColor(bg_color(&(term->graphics)));
 		if(term->mode_2nd) gfx_SetColor(COL_2ND);
@@ -90,7 +89,6 @@ void process_input(terminal_state_t *term) {
 	/* Handle alpha key */
 	if(get_key(keys, kb_KeyAlpha)) {
 		term->mode_alpha = !term->mode_alpha;
-		dbg_sprintf(dbgout, "Alpha mode: %u\n", term->mode_alpha);
 
 		gfx_SetColor(bg_color(&(term->graphics)));
 		if(term->mode_alpha) gfx_SetColor(COL_ALPHA);
