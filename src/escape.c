@@ -34,21 +34,20 @@ bool process_partial_sequence(terminal_state_t *term) {
 			return false;
 		case BS:
 			if(term->csr_x > 1) {
-				set_cursor_pos(term, term->csr_x - 1, term->csr_y, true);
+                set_cursor_pos(term, term->csr_x - 1, term->csr_y);
 			}
 			return false;
 		//case LF:
 		case VT:
 		case FF:
 			if(term->csr_y == term->rows) {
-				erase_cursor(term);
 				fontlib_DrawString("\n");
-				set_cursor_pos(term, term->csr_x, term->csr_y, true);
+                set_cursor_pos(term, term->csr_x, term->csr_y);
 			} else {
-				set_cursor_pos(term, term->csr_x, term->csr_y + 1, true);
+                set_cursor_pos(term, term->csr_x, term->csr_y + 1);
 			}
 		case CR:
-			set_cursor_pos(term, 1, term->csr_y, true);
+            set_cursor_pos(term, 1, term->csr_y);
 			return false;
 		case CSI:
 			return process_csi_sequence(term, &term->esc_buf[1], term->esc_buf_len - 1);
@@ -91,28 +90,28 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 		switch(seq[i]) {
 
-			case '?':  /* Ignore - optional but not required preceding arg list */
+			case '?':  /* todo: set flag for this */
 				continue;
 
 			case 'F': /* CPL */
-				term->csr_x = 0;
+                set_cursor_pos(term, 1, term->csr_y);
 			case 'A': /* CUU */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y > args[0]) {
-					set_cursor_pos(term, term->csr_x, term->csr_y - args[0], true);
+                    set_cursor_pos(term, term->csr_x, term->csr_y - args[0]);
 				} else {
-					set_cursor_pos(term, term->csr_x, 1, true);
+                    set_cursor_pos(term, term->csr_x, 1);
 				}
 				return false;
 
 			case 'E': /* CNL */
-				term->csr_x = 0;
+				set_cursor_pos(term, 1, term->csr_y);
 			case 'B': /* CUD */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y + args[0] < term->rows) {
-					set_cursor_pos(term, term->csr_x, term->csr_y + args[0], true);
+                    set_cursor_pos(term, term->csr_x, term->csr_y + args[0]);
 				} else {
-					set_cursor_pos(term, term->csr_x, term->rows, true);
+                    set_cursor_pos(term, term->csr_x, term->rows);
 				}
 				return false;
 
@@ -120,18 +119,18 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case 'a': /* HPR */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x + args[0] < term->cols) {
-					set_cursor_pos(term, term->csr_x + args[0], term->csr_y, true);
+                    set_cursor_pos(term, term->csr_x + args[0], term->csr_y);
 				} else {
-					set_cursor_pos(term, term->cols, term->csr_y, true);
+                    set_cursor_pos(term, term->cols, term->csr_y);
 				}
 				return false;
 
 			case 'D': /* CUB */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x > args[0]) {
-					set_cursor_pos(term, term->csr_x - args[0], term->csr_y, true);
+                    set_cursor_pos(term, term->csr_x - args[0], term->csr_y);
 				} else {
-					set_cursor_pos(term, 1, term->csr_y, true);
+                    set_cursor_pos(term, 1, term->csr_y);
 				}
 				return false;
 
@@ -139,9 +138,9 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case '`':  /* HPA */
 				if(args[0] == 0) args[0] = 1;
 				if(args[0] < term->cols) {
-					set_cursor_pos(term, args[0], term->csr_y, true);
+                    set_cursor_pos(term, args[0], term->csr_y);
 				} else {
-					set_cursor_pos(term, term->cols, term->csr_y, true);
+                    set_cursor_pos(term, term->cols, term->csr_y);
 				}
 				return false;
 
@@ -152,7 +151,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				if(y == 0) y = 1;
 				if(x > term->cols) x = term->cols;
 				if(y > term->rows) y = term->rows;
-				set_cursor_pos(term, x, y, true);
+                set_cursor_pos(term, x, y);
 				return false;
 			}
 
@@ -230,7 +229,6 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'm':  /* SGR */ {
 				sgr(term, args);
-				set_colors(&term->graphics);
 				return false;
 			}
 
@@ -259,7 +257,7 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 		case 'M':  /* RI */
 			if(term->csr_y > 1) {
-				set_cursor_pos(term, term->csr_x, term->csr_y - 1, true);
+                set_cursor_pos(term, term->csr_x, term->csr_y - 1);
 			}
 			return false;
 
@@ -269,7 +267,7 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			return false;
 
 		case '8':  /* DECRC */
-			set_cursor_pos(term, term->backup.csr_x, term->backup.csr_y, true);
+            set_cursor_pos(term, term->backup.csr_x, term->backup.csr_y);
 			return false;
 
 		default:

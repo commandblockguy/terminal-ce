@@ -126,7 +126,7 @@ void process_input(terminal_state_t *term) {
 
 			/* Check if key is pressed */
 			if(keys[i + KEY_CHAR_COL_OFFSET] & (1 << j)) {
-				char (*key_chars)[8];
+				const char (*key_chars)[8];
 				char val;
 				if(term->mode_2nd) {
 					if(term->mode_alpha) key_chars = key_chars_lower;

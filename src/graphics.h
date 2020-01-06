@@ -26,6 +26,9 @@ enum Colors {
 	GREYSCALE_START = 232
 };
 
+/* Render the terminal */
+void render(terminal_state_t *term);
+
 /* Process a SGR sequence */
 void sgr(terminal_state_t *term, uint24_t *args);
 
@@ -35,9 +38,6 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b);
 /* Calculate the text forgeground color based on graphics attributes */
 /* You probably want graphics->fg_color instead */
 uint8_t get_fg_color(graphics_t *graphics);
-
-/* Sets the fontlib fg and bg color, respecting inverted graphics */
-void set_colors(graphics_t *graphics);
 
 /* Get the background color, respecting inverted graphics */
 uint8_t bg_color(graphics_t *graphics);

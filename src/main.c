@@ -35,8 +35,12 @@
 #include "gfx/gfx.h"
 #include "graphics.h"
 
-//#define ECHO
-#define SERIAL
+#define ECHO
+//#define SERIAL
+//#define TEST_DATA
+#define test_data vt
+
+extern unsigned char vt[16587];
 
 #ifdef SERIAL
 /* Get the usb_device_t for each newly attached device */
@@ -68,18 +72,26 @@ void echo(char *str, size_t len, void *data) {
 }
 #endif
 
+#ifdef TEST_DATA
+void ignore(char *str, size_t len, void *data) {
+
+}
+#endif
+
 void main(void) {
 	usb_error_t error = 0;
+#ifdef SERIAL
 	usb_device_t dev = NULL;
 	srl_device_t srl;
 	static char srlbuf[4096];
+#endif
 	uint8_t step = 0;
 
 	fontlib_font_t *font;
 
 	settings_t settings;
 
-	terminal_state_t term = {0};
+	static terminal_state_t term = {0};
 
 	int i;
 
@@ -114,6 +126,9 @@ void main(void) {
 #elif defined SERIAL
 	term.input_callback = serial_out;
 	term.callback_data = &srl;
+#elif defined TEST_DATA
+	term.input_callback = ignore;
+	term.callback_data = NULL;
 #endif
 
 	init_term(&term);
@@ -169,7 +184,13 @@ void main(void) {
 		write_data(&term, buf, len);
 		if(!dev) break;
 #endif
-	}
+#ifdef TEST_DATA
+		write_data(&term, test_data, sizeof(test_data));
+		break;
+#endif
+
+        render(&term);
+    }
 
 	exit:
 	if(error) {

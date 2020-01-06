@@ -5,3 +5,5 @@ src/gfx/*.h
 src/gfx/convpng.log
 fonts/*.8xv
 fonts/*.bin
+.idea/
+cmake-build-debug/

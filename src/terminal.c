@@ -19,19 +19,41 @@
 #include "gfx/gfx.h"
 
 void write_data(terminal_state_t *term, char *data, size_t size) {
-	char *current = data;
+	char *current;
 	char *end = data + size;
 
-	while(current < end) {
-		/* Don't draw anything if we are in the middle of an escape sequence */
-		if(!term->esc_buf_len) {
-			erase_cursor(term);
-			fontlib_DrawStringL(current, end - current);
-			current = fontlib_GetLastCharacterRead();
-		}
+	for(current = data; current < end; current++) {
+		/* Don't draw anything if we are in the middle of an escape sequence,
+		 * or if the character isn't printable */
+		if(!term->esc_buf_len && *current >= ' ') {
+		    term_char_t *ch = &term->text_buf[term->csr_y - 1][term->csr_x - 1];
 
-		/* Update the cursor position */
-		set_cursor_pos(term, fontlib_GetCursorX() / term->char_width + 1, fontlib_GetCursorY() / term->char_height + 1, false);
+		    ch->ch = *current;
+
+		    if(!term->redraw)
+                term->redraw = REDRAW_SOME;
+
+		    if(term->graphics.reverse) {
+                ch->fg_color = term->graphics.bg_color;
+                ch->bg_color = term->graphics.fg_color;
+            } else {
+                ch->fg_color = term->graphics.fg_color;
+                ch->bg_color = term->graphics.bg_color;
+            }
+
+            set_cursor_pos(term, term->csr_x + 1, term->csr_y);
+
+		    if(term->csr_x > term->cols) {
+		        set_cursor_pos(term, 1, term->csr_y + 1);
+		    }
+		    if(term->csr_y > term->rows) {
+                set_cursor_pos(term, term->csr_x, term->rows);
+		        term->csr_y = term->rows;
+		        memcpy(term->text_buf[0], term->text_buf[1], sizeof(term->text_buf) - sizeof(term->text_buf[0]));
+		        term->redraw = REDRAW_ALL;
+		    }
+		    ch->flags = REDRAW;
+		}
 		
 		/* Add the last read character to the escape sequence buffer */
 		term->esc_buf[term->esc_buf_len++] = *current;
@@ -43,39 +65,32 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 	}
 }
 
-void erase_cursor(terminal_state_t *term) {
-	gfx_SetColor(bg_color(&(term->graphics)));
-	gfx_SetPixel((term->csr_x - 1) * term->char_width, (term->csr_y - 1) * term->char_height);
+void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y) {
+    term->text_buf[y - 1][x - 1].flags |= REDRAW;
+    if(!term->redraw)
+        term->redraw = REDRAW_SOME;
 }
 
-void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y, bool update_fontlib) {
-	/* The pixel locations of the new position */
-	uint24_t x_px = (x - 1) * term->char_width;
-	uint8_t  y_px = (y - 1) * term->char_height;
-
-	erase_cursor(term);
+void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y) {
+	/* Redraw the old position */
+	if(x >= 1 && x <= term->cols && y >= 1 && y <= term->rows)
+        mark_redraw(term, term->csr_x, term->csr_y);
 
 	/* Update the stored position */
 	term->csr_x = x;
 	term->csr_y = y;
 
-	if(update_fontlib) {
-		/* Set the fontlibc cursor position */
-		fontlib_SetCursorPosition(x_px, y_px);
-	}
-
-	/* Draw the new cursor */
-	gfx_SetColor(gfx_red); // temp
-	gfx_SetPixel(x_px, y_px);
+	/* Redraw the new position */
+    mark_redraw(term, x, y);
 }
 
 void init_term(terminal_state_t *term) {
+    uint8_t row, col;
 	gfx_Begin();
 	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
 	gfx_FillScreen(term->graphics.bg_color);
 	fontlib_SetWindowFullScreen();
 	fontlib_SetCursorPosition(0, 0);
-	set_colors(&term->graphics);
 	fontlib_SetTransparency(false);
 	fontlib_SetFirstPrintableCodePoint(32);
 	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
@@ -83,7 +98,18 @@ void init_term(terminal_state_t *term) {
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;
 
-	term->csr_x = 1;
-	term->csr_y = 1;
-	set_cursor_pos(term, 1, 1, true);
+    set_cursor_pos(term, 1, 1);
+
+    for(row = 0; row < term->rows; row++) {
+        for(col = 0; col < term->cols; col++) {
+            term_char_t *ch = &term->text_buf[row][col];
+
+            ch->ch = ' ';
+            ch->fg_color = term->graphics.fg_color;
+            ch->bg_color = term->graphics.bg_color;
+            ch->flags = 0;
+        }
+	}
+
+    term->redraw = REDRAW_ALL;
 }

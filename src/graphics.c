@@ -14,6 +14,39 @@
 #include "graphics.h"
 #include "terminal.h"
 
+void render(terminal_state_t *term) {
+    uint8_t row;
+
+    if(!term->redraw) return;
+
+    for(row = 0; row < term->rows; row++) {
+        uint8_t col;
+        term_char_t *ch = term->text_buf[row];
+        uint8_t y_pos = row * term->char_height;
+
+        for(col = 0; col < term->cols; col++, ch++) {
+            if(term->redraw != REDRAW_ALL && !(ch->flags & BLINK) && !(ch->flags & REDRAW)) continue;
+
+            if(col == term->csr_x - 1 && row == term->csr_y - 1) {
+                fontlib_SetColors(ch->bg_color, ch->fg_color);
+            } else {
+                fontlib_SetColors(ch->fg_color, ch->bg_color);
+            }
+            fontlib_SetCursorPosition(col * term->char_width, y_pos);
+
+            //todo: blink, underline, etc.
+            fontlib_DrawGlyph(ch->ch);
+
+            /* Unset redraw bit */
+            ch->flags &= ~REDRAW;
+        }
+    }
+
+    //todo: draw cursor
+
+    term->redraw = false;
+}
+
 void sgr(terminal_state_t *term, uint24_t *args) {
 	graphics_t *graphics = &term->graphics;
 
@@ -129,22 +162,6 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 
 uint8_t get_fg_color(graphics_t *graphics) {
 	return graphics->base_col | graphics->bold << 3;
-}
-
-void set_colors(graphics_t *graphics) {
-	uint8_t fg;
-	uint8_t bg;
-	if(graphics->reverse) {
-		fg = graphics->bg_color;
-		bg = graphics->fg_color;
-	} else {
-		fg = graphics->fg_color;
-		bg = graphics->bg_color;
-	}
-
-	if(graphics->conceal) fg = bg;
-
-	fontlib_SetColors(fg, bg);
 }
 
 uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
