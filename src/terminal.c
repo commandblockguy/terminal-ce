@@ -60,8 +60,6 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 
 		/* Process the escape sequence */
 		process_escape_sequence(term);
-
-		current++;
 	}
 }
 
