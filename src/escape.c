@@ -38,12 +38,7 @@ bool process_partial_sequence(terminal_state_t *term) {
 		case LF:
 		case VT:
 		case FF:
-			if(term->csr_y == term->rows) {
-				//todo: scroll terminal
-                set_cursor_pos(term, term->csr_x, term->csr_y);
-			} else {
-                set_cursor_pos(term, term->csr_x, term->csr_y + 1);
-			}
+			scroll_down(term);
 			return false;
 		case CR:
             set_cursor_pos(term, 1, term->csr_y);
@@ -145,7 +140,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'H':  /* CUP */ 
 			case 'f':  /* HVP */ {
-				uint8_t x = args[0], y = args[1];
+				uint8_t x = args[1], y = args[0];
 				if(x == 0) x = 1;
 				if(y == 0) y = 1;
 				if(x > term->cols) x = term->cols;

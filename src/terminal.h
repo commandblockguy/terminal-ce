@@ -84,6 +84,9 @@ void write_data(terminal_state_t *term, char *data, size_t size);
 
 void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y);
 
+/* If the cursor is outside of the  */
+void scroll_down(terminal_state_t *term);
+
 /* Mark a position to be redrawn next frame */
 void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y);
 

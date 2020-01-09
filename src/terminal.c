@@ -31,13 +31,8 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
             set_cursor_pos(term, term->csr_x + 1, term->csr_y);
 
 		    if(term->csr_x > term->cols) {
-		        set_cursor_pos(term, 1, term->csr_y + 1);
-		    }
-		    if(term->csr_y > term->rows) {
-                set_cursor_pos(term, term->csr_x, term->rows);
-		        term->csr_y = term->rows;
-		        memcpy(term->text_buf[0], term->text_buf[1], sizeof(term->text_buf) - sizeof(term->text_buf[0]));
-		        term->redraw = REDRAW_ALL;
+		        scroll_down(term);
+		        set_cursor_pos(term, 1, term->csr_y);
 		    }
 		}
 		
@@ -68,7 +63,38 @@ void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y) {
     tc->flags = REDRAW;
 }
 
+void scroll_down(terminal_state_t *term) {
+    if(term->csr_y >= term->rows) {
+        uint8_t x;
+        memcpy(term->text_buf[0], term->text_buf[1], (term->rows - 1) * 80 * sizeof(term_char_t));
+        term->redraw = REDRAW_ALL;
+        set_cursor_pos(term, term->csr_x, term->rows);
+        for(x = 0; x < term->cols; x++) {
+            set_char(term, ' ', x, term->csr_y);
+        }
+    } else if(term->csr_y == term->scroll_bottom) {
+        term_char_t *dest = term->text_buf[term->scroll_top - 1];
+        term_char_t *src = term->text_buf[term->scroll_top];
+        uint8_t x;
+
+        memcpy(dest, src, sizeof(term->text_buf[0]) * (term->scroll_bottom - term->scroll_top));
+        term->redraw = REDRAW_ALL;
+        set_cursor_pos(term, term->csr_x, term->scroll_bottom);
+        for(x = 0; x < term->cols; x++) {
+            set_char(term, ' ', x, term->csr_y);
+        }
+    } else {
+        set_cursor_pos(term, term->csr_x, term->csr_y + 1);
+    }
+    dbg_sprintf(dbgout, "%u\n", term->csr_y);
+}
+
 void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y) {
+    if(!x) return;
+    if(!y) return;
+    if(x > term->cols) return;
+    if(y > term->rows) return;
+
     term->text_buf[y - 1][x - 1].flags |= REDRAW;
     if(!term->redraw)
         term->redraw = REDRAW_SOME;
@@ -96,7 +122,7 @@ void init_term(terminal_state_t *term) {
 	fontlib_SetCursorPosition(0, 0);
 	fontlib_SetTransparency(false);
 	fontlib_SetFirstPrintableCodePoint(32);
-	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP | FONTLIB_PRECLEAR_NEWLINE | FONTLIB_AUTO_SCROLL);
+	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP);
 
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;
