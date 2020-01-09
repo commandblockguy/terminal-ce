@@ -48,26 +48,40 @@ typedef struct {
 } term_char_t;
 
 typedef struct TerminalState {
+    /* Emulated terminal state */
 	uint8_t csr_x;
 	uint8_t csr_y;
-	uint8_t rows;
+
+	uint8_t scroll_top;
+	uint8_t scroll_bottom;
+
+    term_char_t text_buf[24][80];
+    char esc_buf[32];
+    uint8_t esc_buf_len;
+
+    graphics_t graphics;
+    terminal_bkp_t backup;
+
+
+    /* Terminal configuration */
+    uint8_t rows;
 	uint8_t cols;
 	uint8_t char_width;
 	uint8_t char_height;
-	term_char_t text_buf[24][80];
-	char esc_buf[32];
-	uint8_t esc_buf_len;
+    void (*input_callback)(char* pressed, size_t length, void* callback_data);
+    void *callback_data;
+
+
+	/* Emulator state */
 	uint8_t held_keys[7];
 	bool mode_2nd;
 	bool mode_alpha;
 	uint8_t redraw;
-	graphics_t graphics;
-	void (*input_callback)(char* pressed, size_t length, void* callback_data);
-	void *callback_data;
-	terminal_bkp_t backup;
 } terminal_state_t;
 
 void write_data(terminal_state_t *term, char *data, size_t size);
+
+void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y);
 
 /* Mark a position to be redrawn next frame */
 void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y);

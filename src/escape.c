@@ -9,8 +9,6 @@
 #include <string.h>
 
 #include <debug.h>
-#include <fontlibc.h>
-#include <graphx.h>
 
 #include "terminal.h"
 #include "escape.h"
@@ -37,15 +35,16 @@ bool process_partial_sequence(terminal_state_t *term) {
                 set_cursor_pos(term, term->csr_x - 1, term->csr_y);
 			}
 			return false;
-		//case LF:
+		case LF:
 		case VT:
 		case FF:
 			if(term->csr_y == term->rows) {
-				fontlib_DrawString("\n");
+				//todo: scroll terminal
                 set_cursor_pos(term, term->csr_x, term->csr_y);
 			} else {
                 set_cursor_pos(term, term->csr_x, term->csr_y + 1);
 			}
+			return false;
 		case CR:
             set_cursor_pos(term, 1, term->csr_y);
 			return false;
@@ -156,66 +155,81 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			case 'J':  /* ED */ {
-				uint8_t y = (term->csr_y - 1) * term->char_height;
+			    uint8_t x, y;
 				switch(args[0]) {
 					default:
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(0, y + term->char_height, LCD_WIDTH, LCD_HEIGHT - (y + term->char_height) - 1);
+					    /* Erase from cursor to end of display */
+						for(y = term->csr_y + 1; y <= term->rows; y++) {
+                            for(x = 1; x <= term->cols; x++) {
+                                set_char(term, ' ', x, y);
+                            }
+						}
 						break; // continue to EL
 
 					case 1:
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(0, 0, LCD_WIDTH, y);
+					    /* Erase from start to cursor */
+                        for(y = 1; y < term->csr_y; y++) {
+                            for(x = 1; x <= term->cols; x++) {
+                                set_char(term, ' ', x, y);
+                            }
+                        }
 						break; // continue to EL
 
 					case 2:
+					    /* Erase entire screen */
 					case 3:
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(0, 0, LCD_WIDTH, LCD_HEIGHT - 1);
+					    /* Erase entire screen and scrollback buffer */
+                        for(y = 1; y <= term->rows; y++) {
+                            for(x = 1; x <= term->cols; x++) {
+                                set_char(term, ' ', x, y);
+                            }
+                        }
 						return false;
 				}
 			}
 
 			case 'K':  /* EL */ {
-				uint24_t x = (term->csr_x - 1) * term->char_width;
-				uint8_t y = (term->csr_y - 1) * term->char_height;
+				uint8_t x;
 				switch(args[0]) {
 					default:
 						/* Erase from cursor to end of line */
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(x, y, LCD_WIDTH - x, term->char_height);
+						for(x = term->csr_x; x <= term->cols; x++) {
+						    set_char(term, ' ', x, term->csr_y);
+						}
 						return false;
 
 					case 1:
 						/* Erase from start of line to cursor */
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(0, y, LCD_WIDTH - x, term->char_height);
+                        for(x = 1; x < term->csr_x; x++) {
+                            set_char(term, ' ', x, term->csr_y);
+                        }
 						return false;
 
 					case 2:
 						/* Erase entire line */
-						gfx_SetColor(bg_color(&(term->graphics)));
-						gfx_FillRectangle(0, y, LCD_WIDTH, term->char_height);
+                        for(x = 1; x <= term->cols; x++) {
+                            set_char(term, ' ', x, term->csr_y);
+                        }
 						return false;
 				}
 			}
 
 			case 'P':  /* DCH */ {
-				uint24_t src_x, dst_x, width;
-				uint8_t y;
-				if(args[0] == 0) args[0] = 1;
+			    uint8_t actual_width = args[0];
+			    uint8_t x;
 
-				dst_x = (term->csr_x - 1) * term->char_width;
-				src_x = dst_x + args[0] * term->char_width;
-				width = LCD_WIDTH - src_x;
-				y = (term->csr_y - 1) * term->char_height;
-
-				if(src_x <= LCD_WIDTH) {
-					gfx_CopyRectangle(gfx_screen, gfx_screen, src_x, y, dst_x, y, width, term->char_height);
+				if(actual_width == 0) actual_width = 1;
+				if(term->csr_x + actual_width > term->cols) {
+				    actual_width = term->cols - term->csr_x;
 				}
 
-				gfx_SetColor(bg_color(&(term->graphics)));
-				gfx_FillRectangle(src_x + width, y, LCD_WIDTH - (src_x + width), term->char_height);
+                for(x = term->csr_x; x <= term->cols - actual_width; x++) {
+                    char next = term->text_buf[term->csr_y - 1][x + actual_width - 1].ch;
+                    set_char(term, next, x, term->csr_y);
+                }
+                for(x = term->cols - actual_width + 1; x <= term->cols; x++) {
+                    set_char(term, ' ', x, term->csr_y);
+                }
 
 				return false;
 			}
@@ -233,7 +247,8 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			case 'r':  /* DECSTBM */ {
-				fontlib_SetWindow(0, (args[0] - 1) * term->char_height, LCD_WIDTH, (args[1] - args[0] + 1) * term->char_height);
+				term->scroll_top = args[0];
+				term->scroll_bottom = args[1];
 				return false;
 			}
 

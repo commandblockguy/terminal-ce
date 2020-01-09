@@ -26,20 +26,7 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 		/* Don't draw anything if we are in the middle of an escape sequence,
 		 * or if the character isn't printable */
 		if(!term->esc_buf_len && *current >= ' ') {
-		    term_char_t *ch = &term->text_buf[term->csr_y - 1][term->csr_x - 1];
-
-		    ch->ch = *current;
-
-		    if(!term->redraw)
-                term->redraw = REDRAW_SOME;
-
-		    if(term->graphics.reverse) {
-                ch->fg_color = term->graphics.bg_color;
-                ch->bg_color = term->graphics.fg_color;
-            } else {
-                ch->fg_color = term->graphics.fg_color;
-                ch->bg_color = term->graphics.bg_color;
-            }
+		    set_char(term, *current, term->csr_x, term->csr_y);
 
             set_cursor_pos(term, term->csr_x + 1, term->csr_y);
 
@@ -52,7 +39,6 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 		        memcpy(term->text_buf[0], term->text_buf[1], sizeof(term->text_buf) - sizeof(term->text_buf[0]));
 		        term->redraw = REDRAW_ALL;
 		    }
-		    ch->flags = REDRAW;
 		}
 		
 		/* Add the last read character to the escape sequence buffer */
@@ -61,6 +47,25 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 		/* Process the escape sequence */
 		process_escape_sequence(term);
 	}
+}
+
+void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y) {
+    term_char_t *tc = &term->text_buf[y - 1][x - 1];
+
+    tc->ch = ch;
+
+    if(!term->redraw)
+        term->redraw = REDRAW_SOME;
+
+    if(term->graphics.reverse) {
+        tc->fg_color = term->graphics.bg_color;
+        tc->bg_color = term->graphics.fg_color;
+    } else {
+        tc->fg_color = term->graphics.fg_color;
+        tc->bg_color = term->graphics.bg_color;
+    }
+
+    tc->flags = REDRAW;
 }
 
 void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y) {
