@@ -68,6 +68,7 @@ typedef struct TerminalState {
 	uint8_t cols;
 	uint8_t char_width;
 	uint8_t char_height;
+
     void (*input_callback)(char* pressed, size_t length, void* callback_data);
     void *callback_data;
 

@@ -23,10 +23,10 @@
 
 const char key_chars_std  [5][8] = {
 	"\0\0\0\0\0\0#\0",
-	"0147,@\0\x8",
+	"0147,@\0\x08",
 	".258(<\0\0",
 	"-369)>\0\0",
-	"\xA+-*/^\0\0"
+	"\x0D+-*/^\0\0"
 };
 
 const char key_chars_2nd  [5][8] = {
@@ -34,7 +34,7 @@ const char key_chars_2nd  [5][8] = {
 	"\0!$&`\0\0\0",
 	"|@%*{\0\0$",
 	"~#^\0}\0\0\0",
-	"\xA'][\\\0\0\0"
+	"\x0D'][\\\0\0\0"
 };
 
 const char key_chars_upper[5][8] = {
@@ -42,7 +42,7 @@ const char key_chars_upper[5][8] = {
 	" YTOJEB\0",
 	":ZUPKFC\0",
 	"?\0VQLG\0\0",
-	"\xA\"WRMH\0\0"
+	"\x0D\"WRMH\0\0"
 };
 
 const char key_chars_lower[5][8] = {
@@ -50,7 +50,7 @@ const char key_chars_lower[5][8] = {
 	" ytojeb\0",
 	";zupkfc\0",
 	"?\0vqlg\0\0",
-	"\xA\"wrmh\0\0"
+	"\x0D\"wrmh\0\0"
 };
 
 #define get_key(keys, lkey) \
