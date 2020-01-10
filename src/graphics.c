@@ -124,7 +124,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 				graphics->fg_color = true_color_to_palette(args[2], args[3], args[4]);
 
 			} else {
-				dbg_sprintf(dbgout, "Got a weird format (%u) for SGR 38\n", args[1]);
+				dbg_sprintf(dbgerr, "Got a weird format (%u) for SGR 38\n", args[1]);
 			}
 			return;
 
@@ -144,7 +144,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 				graphics->bg_color = true_color_to_palette(args[2], args[3], args[4]);
 
 			} else {
-				dbg_sprintf(dbgout, "Got a weird format (%u) for SGR 48\n", args[1]);
+				dbg_sprintf(dbgerr, "Got a weird format (%u) for SGR 48\n", args[1]);
 			}
 			return;
 
@@ -153,7 +153,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 			return;
 
 		default: 
-			dbg_sprintf(dbgout, "Unknown SGR argument %u\n", args[0]);
+			dbg_sprintf(dbgerr, "Unknown SGR argument %u\n", args[0]);
 			return; /* Skip updating colors */
 	}
 

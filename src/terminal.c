@@ -86,7 +86,6 @@ void scroll_down(terminal_state_t *term) {
     } else {
         set_cursor_pos(term, term->csr_x, term->csr_y + 1);
     }
-    dbg_sprintf(dbgout, "%u\n", term->csr_y);
 }
 
 void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y) {
@@ -126,6 +125,9 @@ void init_term(terminal_state_t *term) {
 
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;
+
+	term->scroll_top = 1;
+	term->scroll_bottom = term->rows;
 
     set_cursor_pos(term, 1, 1);
 

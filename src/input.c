@@ -143,7 +143,7 @@ void process_input(terminal_state_t *term) {
 					if(val >= 'a' && val <= 'z') val = val - 'a' + 1;
 					else if(val >= 'A' && val <= '[') val = val - 'A' + 1;
 					else {
-						dbg_sprintf(dbgout, "Bad ctrl char '%c'\n", val);
+						dbg_sprintf(dbgerr, "Bad ctrl char '%c'\n", val);
 						val = 0;
 					}
 				}

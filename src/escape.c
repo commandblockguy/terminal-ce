@@ -75,12 +75,12 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 		}
 
-		dbg_sprintf(dbgout, "CSI sequence %c(", seq[i]);
-		for(j = 0; j < 16; j++) {
-			dbg_sprintf(dbgout, "%u;", args[j]);
-			if(args[j + 1] == 0) break;
-		}
-		dbg_sprintf(dbgout, ")\n");
+//		dbg_sprintf(dbgout, "CSI sequence %c(", seq[i]);
+//		for(j = 0; j < 16; j++) {
+//			dbg_sprintf(dbgout, "%u;", args[j]);
+//			if(args[j + 1] == 0) break;
+//		}
+//		dbg_sprintf(dbgout, ")\n");
 
 		switch(seq[i]) {
 
@@ -93,10 +93,10 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case 'A': /* CUU */
 			    /* Move cursor up the indicated # of rows. */
 				if(args[0] == 0) args[0] = 1;
-				if(term->csr_y > args[0]) {
+				if(term->csr_y >= args[0] + term->scroll_top) {
                     set_cursor_pos(term, term->csr_x, term->csr_y - args[0]);
 				} else {
-                    set_cursor_pos(term, term->csr_x, 1);
+                    set_cursor_pos(term, term->csr_x, term->scroll_top);
 				}
 				return false;
 
@@ -106,10 +106,10 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case 'B': /* CUD */
 			    /* Move cursor down the indicated # of rows. */
 				if(args[0] == 0) args[0] = 1;
-				if(term->csr_y + args[0] < term->rows) {
+				if(term->csr_y + args[0] <= term->scroll_bottom) {
                     set_cursor_pos(term, term->csr_x, term->csr_y + args[0]);
 				} else {
-                    set_cursor_pos(term, term->csr_x, term->rows);
+                    set_cursor_pos(term, term->csr_x, term->scroll_bottom);
 				}
 				return false;
 
@@ -262,7 +262,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			default:
-				dbg_sprintf(dbgout, "Unknown CSI sequence %c (%x)\n", seq[i], seq[i]);
+				dbg_sprintf(dbgerr, "Unknown CSI sequence %c (%x)\n", seq[i], seq[i]);
 				return false;
 		}
 	}
@@ -298,8 +298,16 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
             set_cursor_pos(term, term->backup.csr_x, term->backup.csr_y);
 			return false;
 
+	    case '(':
+	        if(len == 1) return true;
+	        switch(seq[1]) {
+	            default:
+	                dbg_sprintf(dbgout, "Unimplemented char set: ESC ( %c\n", seq[1]);
+	        }
+	        return false;
+
 		default:
-			dbg_sprintf(dbgout, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);
+			dbg_sprintf(dbgerr, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);
 			return false;
 	}
 }

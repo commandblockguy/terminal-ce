@@ -79,8 +79,8 @@ void ignore(char *str, size_t len, void *data) {
 #endif
 
 void main(void) {
-	usb_error_t error = 0;
 #ifdef SERIAL
+	usb_error_t error = 0;
 	usb_device_t dev = NULL;
 	srl_device_t srl;
 	static char srlbuf[4096];
@@ -93,7 +93,7 @@ void main(void) {
 
 	static terminal_state_t term = {0};
 
-	int i;
+	int i = 0;
 
 	dbg_sprintf(dbgout, "\nProgram Started\n");
 
@@ -147,7 +147,7 @@ void main(void) {
 		}
 		val = usb_HandleEvents();
 		if(val)
-			dbg_sprintf(dbgout, "error in HandleEvents %u\n", val);
+			dbg_sprintf(dbgerr, "error in HandleEvents %u\n", val);
 	}
 
 	dbg_sprintf(dbgout, "usb dev: %p\n", dev);
@@ -185,22 +185,23 @@ void main(void) {
 		if(!dev) break;
 #endif
 #ifdef TEST_DATA
-		write_data(&term, test_data, sizeof(test_data));
-		break;
+		write_data(&term, &test_data[i], 1);
+        dbg_sprintf(dbgout, "%c", &test_data[i]);
+        i++;
 #endif
 
         render(&term);
     }
 
 	exit:
+#ifdef SERIAL
 	if(error) {
 		char buf[4];
 		sprintf(buf, "%u: 0x%X\n", step, error);
 		fontlib_DrawString(buf);
-		dbg_sprintf(dbgout, "error %u\n", error);
+		dbg_sprintf(dbgerr, "error %u\n", error);
 		while(!kb_IsDown(kb_KeyClear)) kb_Scan();
 	}
-#ifdef SERIAL
 	usb_Cleanup();
 #endif
 	gfx_End();
