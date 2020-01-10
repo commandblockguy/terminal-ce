@@ -25,9 +25,14 @@ void render(terminal_state_t *term) {
         uint8_t y_pos = row * term->char_height;
 
         for(col = 0; col < term->cols; col++, ch++) {
+            bool inverse;
             if(term->redraw != REDRAW_ALL && !(ch->flags & BLINK) && !(ch->flags & REDRAW)) continue;
 
-            if(col == term->csr_x - 1 && row == term->csr_y - 1) {
+            inverse = term->mode.dectecm && col == term->csr_x - 1 && row == term->csr_y - 1;
+
+            if(term->mode.decscnm) inverse = !inverse;
+
+            if(inverse) {
                 fontlib_SetColors(ch->bg_color, ch->fg_color);
             } else {
                 fontlib_SetColors(ch->fg_color, ch->bg_color);

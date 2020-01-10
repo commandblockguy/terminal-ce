@@ -41,6 +41,18 @@ enum Redraw {
 };
 
 typedef struct {
+    bool deccrm   : 1; /* Control character rendering */
+    bool decim    : 1; /* Insert mode */
+    bool lf_nl    : 1; /* CR after line feed */
+    bool decckm   : 1; /* Cursor key mode */
+    bool decscnm  : 1; /* Reverse video */
+    bool decom    : 1; /* Cursor addressing from scroll region */
+    bool decawm   : 1; /* Autowrap mode */
+    bool decarm   : 1; /* Autorepeat mode */
+    bool dectecm  : 1; /* Cursor visibility */
+} mode_t;
+
+typedef struct {
 	char ch;
 	uint8_t fg_color;
 	uint8_t bg_color;
@@ -58,6 +70,8 @@ typedef struct TerminalState {
     term_char_t text_buf[24][80];
     char esc_buf[32];
     uint8_t esc_buf_len;
+
+    mode_t mode;
 
     graphics_t graphics;
     terminal_bkp_t backup;

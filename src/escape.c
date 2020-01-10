@@ -56,6 +56,7 @@ bool process_partial_sequence(terminal_state_t *term) {
 bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 	uint24_t args[MAX_CSI_ARGS] = {0};
 	uint8_t arg_num = 0;
+	bool private = false;
 
 	uint8_t i, j;
 
@@ -82,9 +83,50 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 //		}
 //		dbg_sprintf(dbgout, ")\n");
 
+        if(private) {
+            bool new_setting;
+            switch(seq[i]) {
+                case 'h':  /* SM */
+                    /* Set mode */
+                    new_setting = true;
+                    goto priv_mode;
+                case 'l':  /* RM */
+                    /* Reset mode */
+                    new_setting = false;
+                priv_mode:
+                    switch(args[0]) {
+                        case 1:
+                            term->mode.decckm = new_setting;
+                            break;
+                        case 5:
+                            term->mode.decscnm = new_setting;
+                            term->redraw = REDRAW_ALL;
+                            break;
+                        case 6:
+                            term->mode.decom = new_setting;
+                            break;
+                        case 7:
+                            term->mode.decawm = new_setting;
+                            break;
+                        case 8:
+                            term->mode.decarm = new_setting;
+                            break;
+                        case 25:
+                            term->mode.dectecm = new_setting;
+                            break;
+                        default:
+                            dbg_sprintf(dbgerr, "Unknown private mode %u\n", args[0]);
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
 		switch(seq[i]) {
 
-			case '?':  /* todo: set flag for this */
+			case '?':
+			    private = true;
 				continue;
 
 			case 'F': /* CPL */
@@ -261,6 +303,32 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				return false;
 			}
 
+            case 'h':  /* SM */ {
+                /* Set mode */
+                bool new_setting;
+                new_setting = true;
+                goto mode;
+
+            case 'l':  /* RM */
+                /* Reset mode */
+                new_setting = false;
+                mode:
+                switch(args[0]) {
+                    case 3:
+                        term->mode.deccrm = new_setting;
+                        break;
+                    case 4:
+                        term->mode.decim = new_setting;
+                        break;
+                    case 20:
+                        term->mode.lf_nl = new_setting;
+                        break;
+                    default:
+                        dbg_sprintf(dbgerr, "Unknown mode %u\n", args[0]);
+                }
+                return false;
+            }
+
 			default:
 				dbg_sprintf(dbgerr, "Unknown CSI sequence %c (%x)\n", seq[i], seq[i]);
 				return false;
@@ -305,6 +373,14 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 	                dbg_sprintf(dbgout, "Unimplemented char set: ESC ( %c\n", seq[1]);
 	        }
 	        return false;
+
+        case ')':
+            if(len == 1) return true;
+            switch(seq[1]) {
+                default:
+                    dbg_sprintf(dbgout, "Unimplemented char set: ESC ) %c\n", seq[1]);
+            }
+            return false;
 
 		default:
 			dbg_sprintf(dbgerr, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);

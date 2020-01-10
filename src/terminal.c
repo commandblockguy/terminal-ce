@@ -31,8 +31,12 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
             set_cursor_pos(term, term->csr_x + 1, term->csr_y);
 
 		    if(term->csr_x > term->cols) {
-		        scroll_down(term);
-		        set_cursor_pos(term, 1, term->csr_y);
+		        if(term->mode.decawm) {
+                    scroll_down(term);
+                    set_cursor_pos(term, 1, term->csr_y);
+		        } else {
+		            set_cursor_pos(term, term->cols, term->csr_y);
+		        }
 		    }
 		}
 		
@@ -128,6 +132,11 @@ void init_term(terminal_state_t *term) {
 
 	term->scroll_top = 1;
 	term->scroll_bottom = term->rows;
+
+    memset(&term->mode, 0, sizeof(term->mode));
+	term->mode.decawm = true;
+	term->mode.decarm = true;
+	term->mode.dectecm = true;
 
     set_cursor_pos(term, 1, 1);
 
