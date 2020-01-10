@@ -88,8 +88,10 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				continue;
 
 			case 'F': /* CPL */
+			    /* Move cursor up the indicated # of rows, to column 1. */
                 set_cursor_pos(term, 1, term->csr_y);
 			case 'A': /* CUU */
+			    /* Move cursor up the indicated # of rows. */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y > args[0]) {
                     set_cursor_pos(term, term->csr_x, term->csr_y - args[0]);
@@ -99,8 +101,10 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				return false;
 
 			case 'E': /* CNL */
+			    /* Move cursor down the indicated # of rows, to column 1. */
 				set_cursor_pos(term, 1, term->csr_y);
 			case 'B': /* CUD */
+			    /* Move cursor down the indicated # of rows. */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_y + args[0] < term->rows) {
                     set_cursor_pos(term, term->csr_x, term->csr_y + args[0]);
@@ -111,6 +115,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'C': /* CUF */
 			case 'a': /* HPR */
+			    /* Move cursor right the indicated # of columns. */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x + args[0] < term->cols) {
                     set_cursor_pos(term, term->csr_x + args[0], term->csr_y);
@@ -120,6 +125,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				return false;
 
 			case 'D': /* CUB */
+                /* Move cursor left the indicated # of columns. */
 				if(args[0] == 0) args[0] = 1;
 				if(term->csr_x > args[0]) {
                     set_cursor_pos(term, term->csr_x - args[0], term->csr_y);
@@ -130,6 +136,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'G':  /* CHA */
 			case '`':  /* HPA */
+			    /* Move cursor to indicated column in current row. */
 				if(args[0] == 0) args[0] = 1;
 				if(args[0] < term->cols) {
                     set_cursor_pos(term, args[0], term->csr_y);
@@ -140,6 +147,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'H':  /* CUP */ 
 			case 'f':  /* HVP */ {
+			    /* Move cursor to the indicated row, column */
 				uint8_t x = args[1], y = args[0];
 				if(x == 0) x = 1;
 				if(y == 0) y = 1;
@@ -150,6 +158,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			case 'J':  /* ED */ {
+			    /* Erase display */
 			    uint8_t x, y;
 				switch(args[0]) {
 					default:
@@ -184,6 +193,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			case 'K':  /* EL */ {
+			    /* Erase line */
 				uint8_t x;
 				switch(args[0]) {
 					default:
@@ -210,6 +220,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 
 			case 'P':  /* DCH */ {
+			    /* Delete the indicated # of characters on current line. */
 			    uint8_t actual_width = args[0];
 			    uint8_t x;
 
@@ -231,17 +242,20 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 
 			case 'c':  /* DA */ {
+			    /* Answer ESC [ ? 6 c: "I am a VT102". */
 				const char *str = CSI_SEQ "?6c";
 				term->input_callback(str, strlen(str), term->callback_data);
 				return false;
 			}
 
 			case 'm':  /* SGR */ {
+			    /* Set graphics rendition */
 				sgr(term, args);
 				return false;
 			}
 
 			case 'r':  /* DECSTBM */ {
+			    /* Set scrolling region */
 				term->scroll_top = args[0];
 				term->scroll_bottom = args[1];
 				return false;
@@ -261,22 +275,26 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 	if(!len) return true;
 
 	switch(seq[0]) {
-		/* Handle CSI sequence */
 		case '[':
-			return process_csi_sequence(term, &seq[1], len - 1);
+            /* Control sequence introducer */
+            return process_csi_sequence(term, &seq[1], len - 1);
 
 		case 'M':  /* RI */
+		    /* Reverse linefeed. */
+		    //todo: backwards scrolling
 			if(term->csr_y > 1) {
                 set_cursor_pos(term, term->csr_x, term->csr_y - 1);
 			}
 			return false;
 
 		case '7':  /* DECSC */
+		    /* Save current state */
 			term->backup.csr_x = term->csr_x;
 			term->backup.csr_y = term->csr_y;
 			return false;
 
 		case '8':  /* DECRC */
+		    /* Restore state most recently saved by ESC 7. */
             set_cursor_pos(term, term->backup.csr_x, term->backup.csr_y);
 			return false;
 
