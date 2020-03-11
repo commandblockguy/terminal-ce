@@ -76,15 +76,21 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			}
 		}
 
-//		dbg_sprintf(dbgout, "CSI sequence %c(", seq[i]);
-//		for(j = 0; j < 16; j++) {
-//			dbg_sprintf(dbgout, "%u;", args[j]);
-//			if(args[j + 1] == 0) break;
-//		}
-//		dbg_sprintf(dbgout, ")\n");
+		if(seq[i] == '?') {
+            private = true;
+		    continue;
+		}
 
         if(private) {
             bool new_setting;
+
+            dbg_sprintf(dbgout, "Private CSI sequence %c(", seq[i]);
+            for(j = 0; j < 16; j++) {
+                dbg_sprintf(dbgout, "%u;", args[j]);
+                if(args[j + 1] == 0) break;
+            }
+            dbg_sprintf(dbgout, ")\n");
+
             switch(seq[i]) {
                 case 'h':  /* SM */
                     /* Set mode */
@@ -119,15 +125,19 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
                     }
                     return false;
                 default:
+                    dbg_sprintf(dbgerr, "Unknown private CSI sequence %c (%x)\n", seq[i], seq[i]);
                     return false;
             }
         }
 
-		switch(seq[i]) {
+        dbg_sprintf(dbgout, "CSI sequence %c(", seq[i]);
+        for(j = 0; j < 16; j++) {
+            dbg_sprintf(dbgout, "%u;", args[j]);
+            if(args[j + 1] == 0) break;
+        }
+        dbg_sprintf(dbgout, ")\n");
 
-			case '?':
-			    private = true;
-				continue;
+		switch(seq[i]) {
 
 			case 'F': /* CPL */
 			    /* Move cursor up the indicated # of rows, to column 1. */
@@ -329,6 +339,16 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
                 return false;
             }
 
+            case 'd': /* VPA */
+                /* Move cursor to the indicated row, current column. */
+                if(args[0] == 0) args[0] = 1;
+                if(args[0] < term->rows) {
+                    set_cursor_pos(term, term->csr_x, args[0]);
+                } else {
+                    set_cursor_pos(term, term->csr_x, term->rows);
+                }
+                return false;
+
 			default:
 				dbg_sprintf(dbgerr, "Unknown CSI sequence %c (%x)\n", seq[i], seq[i]);
 				return false;
@@ -381,6 +401,14 @@ bool process_esc_sequence(terminal_state_t *term, char *seq, uint8_t len) {
                     dbg_sprintf(dbgout, "Unimplemented char set: ESC ) %c\n", seq[1]);
             }
             return false;
+
+	    case 'Z': {
+            /* Answer ESC [ ? 1 ; 2 c */
+            const char *str = CSI_SEQ "?6c";
+            term->input_callback(str, strlen(str), term->callback_data);
+            return false;
+	    }
+
 
 		default:
 			dbg_sprintf(dbgerr, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);

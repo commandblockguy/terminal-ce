@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <fileioc.h>
+
 #include "settings.h"
 
 settings_t default_settings = {

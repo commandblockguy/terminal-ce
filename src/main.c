@@ -35,12 +35,12 @@
 #include "gfx/gfx.h"
 #include "graphics.h"
 
-#define ECHO
-//#define SERIAL
+//#define ECHO
+#define SERIAL
 //#define TEST_DATA
-#define test_data vt
+#define test_data lynx_out
 
-extern unsigned char vt[16587];
+extern unsigned char test_data[15251];
 
 #ifdef SERIAL
 /* Get the usb_device_t for each newly attached device */
@@ -186,7 +186,7 @@ void main(void) {
 #endif
 #ifdef TEST_DATA
 		write_data(&term, &test_data[i], 1);
-        dbg_sprintf(dbgout, "%c", &test_data[i]);
+        dbg_sprintf(dbgout, "%c", test_data[i]);
         i++;
 #endif
 

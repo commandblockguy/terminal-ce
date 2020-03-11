@@ -53,8 +53,7 @@ const char key_chars_lower[5][8] = {
 	"\x0D\"wrmh\0\0"
 };
 
-#define get_key(keys, lkey) \
-(keys[((lkey) >> 8) - 1] & (lkey))
+#define get_key(keys, lkey) ((keys)[((lkey) >> 8) - 1] & (lkey))
 
 void process_input(terminal_state_t *term) {
 	uint8_t i;
@@ -114,6 +113,15 @@ void process_input(terminal_state_t *term) {
 			len += len_diff;
 		}
 	}
+
+    /* Handle F1+window key (send stty command) */
+    if(kb_IsDown(kb_KeyYequ) && get_key(keys, kb_KeyWindow)) {
+        if(len + 21 < 25) {
+            sprintf(&buf[len], "stty rows %2u cols %2u\n",
+                    term->rows, term->cols);
+            len += 21;
+        }
+    }
 
 	/* Handle regular keypresses */
 	/* Check each keypad group */
