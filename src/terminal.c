@@ -48,6 +48,10 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 	}
 }
 
+void write_string(terminal_state_t *term, char *str) {
+    write_data(term, str, strlen(str));
+}
+
 void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y) {
     term_char_t *tc = &term->text_buf[y - 1][x - 1];
 

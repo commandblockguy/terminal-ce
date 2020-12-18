@@ -196,9 +196,9 @@ void main(void) {
 	exit:
 #ifdef SERIAL
 	if(error) {
-		char buf[4];
+		char buf[16];
 		sprintf(buf, "%u: 0x%X\n", step, error);
-		fontlib_DrawString(buf);
+		write_string(&term, buf);
 		dbg_sprintf(dbgerr, "error %u\n", error);
 		while(!kb_IsDown(kb_KeyClear)) kb_Scan();
 	}
