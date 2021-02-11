@@ -129,9 +129,6 @@ int main(void) {
 		}
 	}
 
-	term.graphics.fg_color = WHITE;
-	term.graphics.bg_color = BLACK;
-
 	font = fontlib_GetFontByIndex(settings.font_pack_name, settings.reg_font);
 	if (font) {
 		fontlib_SetFont(font, 0);
@@ -198,8 +195,6 @@ int main(void) {
         dbg_sprintf(dbgout, "%c", test_data[i]);
         i++;
 #endif
-
-        render(&term);
     }
 
 	exit:

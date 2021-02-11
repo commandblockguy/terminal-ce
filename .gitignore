@@ -7,3 +7,4 @@ fonts/*.8xv
 fonts/*.bin
 .idea/
 cmake-build-debug/
+cmake-build-debug-ez80/

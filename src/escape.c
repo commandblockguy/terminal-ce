@@ -106,7 +106,7 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
                             break;
                         case 5:
                             term->mode.decscnm = new_setting;
-                            term->redraw = REDRAW_ALL;
+                            // todo: redraw screen
                             break;
                         case 6:
                             term->mode.decom = new_setting;
@@ -211,23 +211,18 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 
 			case 'J':  /* ED */ {
 			    /* Erase display */
-			    uint8_t x, y;
 				switch(args[0]) {
 					default:
 					    /* Erase from cursor to end of display */
-						for(y = term->csr_y + 1; y <= term->rows; y++) {
-                            for(x = 1; x <= term->cols; x++) {
-                                set_char(term, ' ', x, y);
-                            }
+						for(uint8_t y = term->csr_y + 1; y <= term->rows; y++) {
+						    erase_chars(term, 1, term->cols, y);
 						}
 						break; // continue to EL
 
 					case 1:
 					    /* Erase from start to cursor */
-                        for(y = 1; y < term->csr_y; y++) {
-                            for(x = 1; x <= term->cols; x++) {
-                                set_char(term, ' ', x, y);
-                            }
+                        for(uint8_t y = 1; y < term->csr_y; y++) {
+                            erase_chars(term, 1, term->cols, y);
                         }
 						break; // continue to EL
 
@@ -235,10 +230,8 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 					    /* Erase entire screen */
 					case 3:
 					    /* Erase entire screen and scrollback buffer */
-                        for(y = 1; y <= term->rows; y++) {
-                            for(x = 1; x <= term->cols; x++) {
-                                set_char(term, ' ', x, y);
-                            }
+                        for(uint8_t y = 1; y <= term->rows; y++) {
+                            erase_chars(term, 1, term->cols, y);
                         }
 						return false;
 				}
@@ -250,23 +243,17 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 				switch(args[0]) {
 					default:
 						/* Erase from cursor to end of line */
-						for(x = term->csr_x; x <= term->cols; x++) {
-						    set_char(term, ' ', x, term->csr_y);
-						}
+                        erase_chars(term, term->csr_x, term->cols, term->csr_y);
 						return false;
 
 					case 1:
 						/* Erase from start of line to cursor */
-                        for(x = 1; x < term->csr_x; x++) {
-                            set_char(term, ' ', x, term->csr_y);
-                        }
+						erase_chars(term, 1, term->csr_x - 1, term->csr_y);
 						return false;
 
 					case 2:
 						/* Erase entire line */
-                        for(x = 1; x <= term->cols; x++) {
-                            set_char(term, ' ', x, term->csr_y);
-                        }
+                        erase_chars(term, 1, term->cols, term->csr_y);
 						return false;
 				}
 			}
@@ -274,20 +261,13 @@ bool process_csi_sequence(terminal_state_t *term, char *seq, uint8_t len) {
 			case 'P':  /* DCH */ {
 			    /* Delete the indicated # of characters on current line. */
 			    uint8_t actual_width = args[0];
-			    uint8_t x;
 
 				if(actual_width == 0) actual_width = 1;
 				if(term->csr_x + actual_width > term->cols) {
 				    actual_width = term->cols - term->csr_x;
 				}
 
-                for(x = term->csr_x; x <= term->cols - actual_width; x++) {
-                    char next = term->text_buf[term->csr_y - 1][x + actual_width - 1].ch;
-                    set_char(term, next, x, term->csr_y);
-                }
-                for(x = term->cols - actual_width + 1; x <= term->cols; x++) {
-                    set_char(term, ' ', x, term->csr_y);
-                }
+				delete_chars(term, term->csr_x, term->csr_y, actual_width);
 
 				return false;
 			}

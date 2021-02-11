@@ -17,8 +17,6 @@ typedef struct StateBackup {
 } terminal_bkp_t;
 
 typedef struct graphics {
-	uint8_t fg_color;
-	uint8_t bg_color;
 	bool bold        : 1;
 	bool blink       : 1;
 	bool reverse     : 1;
@@ -32,13 +30,6 @@ typedef struct graphics {
 #define BLINK     (1<<1)
 #define UNDERLINE (1<<2)
 #define CROSSED   (1<<3)
-#define REDRAW    (1<<7)
-
-enum Redraw {
-    REDRAW_NONE,
-    REDRAW_SOME,
-    REDRAW_ALL
-};
 
 typedef struct {
     bool deccrm   : 1; /* Control character rendering */
@@ -52,13 +43,6 @@ typedef struct {
     bool dectecm  : 1; /* Cursor visibility */
 } mode_t;
 
-typedef struct {
-	char ch;
-	uint8_t fg_color;
-	uint8_t bg_color;
-	uint8_t flags;
-} term_char_t;
-
 typedef struct TerminalState {
     /* Emulated terminal state */
 	uint8_t csr_x;
@@ -67,7 +51,6 @@ typedef struct TerminalState {
 	uint8_t scroll_top;
 	uint8_t scroll_bottom;
 
-    term_char_t text_buf[24][80];
     char esc_buf[32];
     uint8_t esc_buf_len;
 
@@ -91,21 +74,15 @@ typedef struct TerminalState {
 	uint8_t held_keys[7];
 	bool mode_2nd;
 	bool mode_alpha;
-	uint8_t redraw;
 } terminal_state_t;
 
+void write_char(terminal_state_t *term, char c);
 void write_data(terminal_state_t *term, const char *data, size_t size);
 void write_string(terminal_state_t *term, const char *str);
 
-void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y);
-
-/* If the cursor is outside of the  */
-void scroll_down(terminal_state_t *term);
-
-/* Mark a position to be redrawn next frame */
-void mark_redraw(terminal_state_t *term, uint8_t x, uint8_t y);
-
 void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y);
+
+void scroll_down(terminal_state_t *term);
 
 void init_term(terminal_state_t *term);
 

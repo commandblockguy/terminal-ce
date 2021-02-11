@@ -1,84 +1,45 @@
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <fontlibc.h>
+#include <graphx.h>
 #include <debug.h>
 
 #include "graphics.h"
 #include "terminal.h"
-
-void render(terminal_state_t *term) {
-    uint8_t row;
-
-    if(!term->redraw) return;
-
-    for(row = 0; row < term->rows; row++) {
-        uint8_t col;
-        term_char_t *ch = term->text_buf[row];
-        uint8_t y_pos = row * term->char_height;
-
-        for(col = 0; col < term->cols; col++, ch++) {
-            bool inverse;
-            if(term->redraw != REDRAW_ALL && !(ch->flags & BLINK) && !(ch->flags & REDRAW)) continue;
-
-            inverse = term->mode.dectecm && col == term->csr_x - 1 && row == term->csr_y - 1;
-
-            if(term->mode.decscnm) inverse = !inverse;
-
-            if(inverse) {
-                fontlib_SetColors(ch->bg_color, ch->fg_color);
-            } else {
-                fontlib_SetColors(ch->fg_color, ch->bg_color);
-            }
-            fontlib_SetCursorPosition(col * term->char_width, y_pos);
-
-            //todo: blink, underline, etc.
-            fontlib_DrawGlyph(ch->ch);
-
-            /* Unset redraw bit */
-            ch->flags &= ~REDRAW;
-        }
-    }
-
-    //todo: draw cursor
-
-    term->redraw = false;
-}
 
 void sgr(terminal_state_t *term, uint24_t *args) {
 	graphics_t *graphics = &term->graphics;
 
 	if(30 <= args[0] && args[0] <= 37) {
 		graphics->base_col = args[0] - 30;
-		graphics->fg_color = get_fg_color(graphics);
+		update_fg_color(graphics);
 		return;
 	}
 
 	if(40 <= args[0] && args[0] <= 47) {
-		graphics->bg_color = args[0] - 40;
+		fontlib_SetBackgroundColor(args[0] - 40);
 		return;
 	}
 
 	switch(args[0]) {
 		case 0: /* Reset all attributes */
-			graphics->bg_color = BLACK;
 			graphics->bold = false;
 			graphics->reverse = false;
 			graphics->underline = false;
 			graphics->conceal = false;
 			graphics->crossed = false;
 			graphics->base_col = WHITE;
+			update_fg_color(graphics);
+            fontlib_SetBackgroundColor(BLACK);
 			break;
 
 		case 1: /* Set bold */
 			graphics->bold = true;
+            update_fg_color(graphics);
 			break;
 
 		case 4: /* Set underline */
@@ -99,6 +60,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 
 		case 22: /* Reset intensity */
 			graphics->bold = false;
+            update_fg_color(graphics);
 			break;
 
 		case 24: /* Reset underline */
@@ -119,14 +81,13 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 
 		case 38:
 			if(args[1] == 5) {
-
 				/* 8-bit palette */
-				graphics->fg_color = args[2];
+				fontlib_SetForegroundColor(args[2]);
 
 			} else if(args[1] == 2) {
-
 				/* 24-bit true color */
-				graphics->fg_color = true_color_to_palette(args[2], args[3], args[4]);
+				uint8_t color = true_color_to_palette(args[2], args[3], args[4]);
+				fontlib_SetForegroundColor(color);
 
 			} else {
 				dbg_sprintf(dbgerr, "Got a weird format (%u) for SGR 38\n", args[1]);
@@ -135,18 +96,18 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 
 		case 39:
 			graphics->base_col = WHITE;
+            update_fg_color(graphics);
 			break;
 
 		case 48:
 			if(args[1] == 5) {
-
 				/* 8-bit palette */
-				graphics->bg_color = args[2];
+				fontlib_SetBackgroundColor(args[2]);
 
 			} else if(args[1] == 2) {
-
 				/* 24-bit true color */
-				graphics->bg_color = true_color_to_palette(args[2], args[3], args[4]);
+				uint8_t color = true_color_to_palette(args[2], args[3], args[4]);
+                fontlib_SetBackgroundColor(color);
 
 			} else {
 				dbg_sprintf(dbgerr, "Got a weird format (%u) for SGR 48\n", args[1]);
@@ -154,19 +115,17 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 			return;
 
 		case 49:
-			graphics->bg_color = BLACK;
+            fontlib_SetBackgroundColor(BLACK);
 			return;
 
 		default: 
 			dbg_sprintf(dbgerr, "Unknown SGR argument %u\n", args[0]);
 			return; /* Skip updating colors */
 	}
-
-	graphics->fg_color = get_fg_color(graphics);
 }
 
-uint8_t get_fg_color(graphics_t *graphics) {
-	return graphics->base_col | graphics->bold << 3;
+void update_fg_color(graphics_t *graphics) {
+	fontlib_SetForegroundColor(graphics->base_col | graphics->bold << 3);
 }
 
 uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
@@ -202,10 +161,22 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
 
 }
 
-uint8_t bg_color(graphics_t *graphics) {
-	if(graphics->reverse) {
-		return graphics->fg_color;
-	} else {
-		return graphics->bg_color;
-	}
+void set_char_at(terminal_state_t *term, char c, uint8_t x, uint8_t y) {
+    fontlib_SetCursorPosition((x - 1) * term->char_width, (y - 1) * term->char_height);
+    fontlib_DrawGlyph(c);
+}
+
+void erase_chars(terminal_state_t *term, uint8_t start_x, uint8_t end_x, uint8_t y) {
+    for(uint8_t x = start_x; x <= end_x; x++) {
+        set_char_at(term, ' ', x, y);
+    }
+}
+
+void delete_chars(terminal_state_t *term, uint8_t x, uint8_t y, uint8_t amount) {
+    uint24_t src_x = (x + amount) * term->char_width;
+    uint24_t dst_x = x * term->char_width;
+    uint8_t src_y = y * term->char_height;
+    uint24_t width = amount * term->char_width;
+    gfx_CopyRectangle(gfx_screen, gfx_screen, src_x, src_y, dst_x, src_y, width, term->char_height);
+    erase_chars(term, x + amount, term->cols, y);
 }
