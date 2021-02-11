@@ -18,7 +18,7 @@
 
 #include "gfx/gfx.h"
 
-void write_data(terminal_state_t *term, char *data, size_t size) {
+void write_data(terminal_state_t *term, const char *data, size_t size) {
 	char *current;
 	char *end = data + size;
 
@@ -48,7 +48,7 @@ void write_data(terminal_state_t *term, char *data, size_t size) {
 	}
 }
 
-void write_string(terminal_state_t *term, char *str) {
+void write_string(terminal_state_t *term, const char *str) {
     write_data(term, str, strlen(str));
 }
 

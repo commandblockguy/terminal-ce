@@ -24,7 +24,6 @@
 
 #include <debug.h>
 
-#define usb_callback_data_t usb_device_t
 #include <usbdrvce.h>
 #include <srldrvce.h>
 
@@ -43,24 +42,50 @@
 extern unsigned char test_data[15251];
 
 #ifdef SERIAL
-/* Get the usb_device_t for each newly attached device */
+
+#define SERIAL_BUF_SIZE 4096
+
+struct event_callback_data {
+    srl_device_t *srl;
+    bool *has_device;
+    char *buf;
+    terminal_state_t *term;
+};
+
+struct srl_callback_data {
+    srl_device_t *srl;
+    bool *has_device;
+};
+
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 								  usb_callback_data_t *callback_data) {
-	if(event == USB_DEVICE_CONNECTED_EVENT || event == USB_HOST_CONFIGURE_EVENT) {
-		dbg_sprintf(dbgout, "Device connected.\n");
-		if(!*callback_data) {
-			*callback_data = event_data;
-		}
-	}
+    const struct event_callback_data *cb_data = callback_data;
+    if((event == USB_DEVICE_CONNECTED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) || event == USB_HOST_CONFIGURE_EVENT) {
+        if(!*cb_data->has_device) {
+            usb_device_t device = event_data;
+
+            /* Initialize the serial library with the newly attached device */
+            srl_error_t error = srl_Init(cb_data->srl, device, cb_data->buf, SERIAL_BUF_SIZE, SRL_INTERFACE_ANY);
+
+            if(error) {
+                write_string(cb_data->term, "Error initting serial\r\n");
+            } else {
+                *cb_data->has_device = true;
+            }
+        }
+    }
 	if(event == USB_DEVICE_DISCONNECTED_EVENT) {
 		dbg_sprintf(dbgout, "Device disconnected.\n");
-		*callback_data = NULL;
+		*cb_data->has_device = false;
 	}
 	return USB_SUCCESS;
 }
 
 void serial_out(char *str, size_t len, void *data) {
-	srl_Write(data, str, len);
+    struct srl_callback_data *srl_out = data;
+    if(*srl_out->has_device) {
+        srl_Write(srl_out->srl, str, len);
+    }
 }
 #endif
 
@@ -78,22 +103,19 @@ void ignore(char *str, size_t len, void *data) {
 }
 #endif
 
-void main(void) {
+int main(void) {
+    static terminal_state_t term = {0};
 #ifdef SERIAL
-	usb_error_t error = 0;
-	usb_device_t dev = NULL;
+	usb_error_t error;
 	srl_device_t srl;
-	static char srlbuf[4096];
+	bool has_srl_device = false;
+    static char srlbuf[4096];
 #endif
 	uint8_t step = 0;
 
 	fontlib_font_t *font;
 
 	settings_t settings;
-
-	static terminal_state_t term = {0};
-
-	int i = 0;
 
 	dbg_sprintf(dbgout, "\nProgram Started\n");
 
@@ -103,7 +125,7 @@ void main(void) {
 		write_default_settings();
 		if(!read_settings(&settings)) {
 			dbg_sprintf(dbgerr, "Failed to read settings.\n");
-			return;
+			return 1;
 		}
 	}
 
@@ -118,14 +140,15 @@ void main(void) {
 	} else {
 		dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
 		gfx_End();
-		return;
+		return 1;
 	}
 #ifdef ECHO
 	term.input_callback = echo;
 	term.callback_data = &term;
 #elif defined SERIAL
 	term.input_callback = serial_out;
-	term.callback_data = &srl;
+	struct srl_callback_data cb_data = {&srl, &has_srl_device};
+	term.callback_data = &cb_data;
 #elif defined TEST_DATA
 	term.input_callback = ignore;
 	term.callback_data = NULL;
@@ -136,32 +159,16 @@ void main(void) {
 
 #ifdef SERIAL
 
-	if((error = usb_Init(handle_usb_event, &dev, srl_GetCDCStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
+	struct event_callback_data callback_data = {
+	        &srl,
+	        &has_srl_device,
+	        srlbuf,
+	        &term
+	};
+	if((error = usb_Init(handle_usb_event, &callback_data, srl_GetCDCStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
 	step = 1;
 
-	while(!dev) {
-		uint8_t val;
-		kb_Scan();
-		if(kb_IsDown(kb_KeyClear)) {
-			goto exit;
-		}
-		val = usb_HandleEvents();
-		if(val)
-			dbg_sprintf(dbgerr, "error in HandleEvents %u\n", val);
-	}
-
-	dbg_sprintf(dbgout, "usb dev: %p\n", dev);
-
-	if((error = srl_Init(&srl, dev, srlbuf, sizeof(srlbuf), SRL_INTERFACE_ANY))) goto exit;
-	step = 2;
-
 	usb_HandleEvents();
-
-	dbg_sprintf(dbgout, "srl dev: %p\n", &srl);
-
-	srl_SetRate(&srl, 115200);
-
-	dbg_sprintf(dbgout, "set rate\n");
 
 #endif
 
@@ -172,17 +179,19 @@ void main(void) {
 		process_input(&term);
 
 #ifdef SERIAL
-		while(len < 64) {
-			uint8_t last;
-			usb_HandleEvents();
-			if(!dev) break;
-			last = srl_Read(&srl, buf + len, 64 - len);
-			if(!last) break;
-			len += last;
-		}
+		if(has_srl_device) {
+            while(len < 64) {
+                uint8_t last;
+                usb_HandleEvents();
+                if(!has_srl_device) break;
+                last = srl_Read(&srl, buf + len, 64 - len);
+                if(!last) break;
+                len += last;
+            }
 
-		write_data(&term, buf, len);
-		if(!dev) break;
+            write_data(&term, buf, len);
+        }
+        usb_HandleEvents();
 #endif
 #ifdef TEST_DATA
 		write_data(&term, &test_data[i], 1);
@@ -205,4 +214,5 @@ void main(void) {
 	usb_Cleanup();
 #endif
 	gfx_End();
+	return 0;
 }

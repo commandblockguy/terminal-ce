@@ -1,18 +1,24 @@
-# ----------------------------
-# Set NAME to the program name
-# Set ICON to the png icon file name
-# Set DESCRIPTION to display within a compatible shell
-# Set COMPRESSED to "YES" to create a compressed program
-# ----------------------------
-
-NAME        ?= TERMINAL
-COMPRESSED  ?= NO
-ICON        ?= iconc.png
-DESCRIPTION ?= "Terminal CE"
 
 # ----------------------------
+# Makefile Options
+# ----------------------------
 
-include $(CEDEV)/include/.makefile
+NAME ?= TERMINAL
+ICON ?= icon.png
+DESCRIPTION ?= "VT100 Terminal Emulator"
+COMPRESSED ?= YES
+ARCHIVED ?= YES
+
+CFLAGS ?= -Wall -Wextra -Oz
+CXXFLAGS ?= -Wall -Wextra -Oz
+
+# ----------------------------
+
+ifndef CEDEV
+$(error CEDEV environment path variable is not set)
+endif
+
+include $(CEDEV)/meta/makefile.mk
 
 fonts:
 	$(MAKE) -C fonts

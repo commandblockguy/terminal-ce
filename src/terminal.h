@@ -94,8 +94,8 @@ typedef struct TerminalState {
 	uint8_t redraw;
 } terminal_state_t;
 
-void write_data(terminal_state_t *term, char *data, size_t size);
-void write_string(terminal_state_t *term, char *str);
+void write_data(terminal_state_t *term, const char *data, size_t size);
+void write_string(terminal_state_t *term, const char *str);
 
 void set_char(terminal_state_t *term, char ch, uint8_t x, uint8_t y);
 
