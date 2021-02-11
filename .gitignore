@@ -2,7 +2,6 @@ bin/
 obj/
 src/gfx/*.c
 src/gfx/*.h
-src/gfx/convpng.log
 fonts/*.8xv
 fonts/*.bin
 .idea/

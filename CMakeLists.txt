@@ -9,8 +9,9 @@ add_custom_target(Make ALL $(MAKE) WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 
 # A dummy target to make CLion do stuff
 add_executable(dummy
-        src/gfx/gfx.c
         src/gfx/gfx.h
+        src/gfx/gfx_pal.h
+        src/gfx/gfx_pal.c
         src/escape.c
         src/escape.h
         src/graphics.c

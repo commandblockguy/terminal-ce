@@ -1,0 +1,13 @@
+palettes:
+  - name: gfx_pal
+    fixed-entries:
+      - image: palette.png
+
+# convimg is dumb
+converts:
+  - name: dummy
+
+outputs:
+  - type: c
+    palettes:
+      - gfx_pal
