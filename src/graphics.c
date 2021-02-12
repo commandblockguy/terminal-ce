@@ -1,3 +1,5 @@
+#include "graphics.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -8,11 +10,8 @@
 #include <graphx.h>
 #include <debug.h>
 
-#include "graphics.h"
-#include "terminal.h"
-
-void sgr(terminal_state_t *term, uint24_t *args) {
-	graphics_t *graphics = &term->graphics;
+void sgr(struct terminal_state *term, const uint24_t *args) {
+	struct graphics *graphics = &term->graphics;
 
 	if(30 <= args[0] && args[0] <= 37) {
 		graphics->base_col = args[0] - 30;
@@ -32,7 +31,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 			graphics->underline = false;
 			graphics->conceal = false;
 			graphics->crossed = false;
-			graphics->base_col = WHITE;
+			graphics->base_col = BASE_WHITE;
 			update_fg_color(graphics);
             fontlib_SetBackgroundColor(BLACK);
 			break;
@@ -95,7 +94,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 			return;
 
 		case 39:
-			graphics->base_col = WHITE;
+			graphics->base_col = BASE_WHITE;
             update_fg_color(graphics);
 			break;
 
@@ -124,7 +123,7 @@ void sgr(terminal_state_t *term, uint24_t *args) {
 	}
 }
 
-void update_fg_color(graphics_t *graphics) {
+void update_fg_color(struct graphics *graphics) {
 	fontlib_SetForegroundColor(graphics->base_col | graphics->bold << 3);
 }
 
@@ -161,18 +160,18 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
 
 }
 
-void set_char_at(terminal_state_t *term, char c, uint8_t x, uint8_t y) {
+void set_char_at(struct terminal_state *term, char c, uint8_t x, uint8_t y) {
     fontlib_SetCursorPosition((x - 1) * term->char_width, (y - 1) * term->char_height);
     fontlib_DrawGlyph(c);
 }
 
-void erase_chars(terminal_state_t *term, uint8_t start_x, uint8_t end_x, uint8_t y) {
+void erase_chars(struct terminal_state *term, uint8_t start_x, uint8_t end_x, uint8_t y) {
     for(uint8_t x = start_x; x <= end_x; x++) {
         set_char_at(term, ' ', x, y);
     }
 }
 
-void delete_chars(terminal_state_t *term, uint8_t x, uint8_t y, uint8_t amount) {
+void delete_chars(struct terminal_state *term, uint8_t x, uint8_t y, uint8_t amount) {
     uint24_t src_x = (x + amount) * term->char_width;
     uint24_t dst_x = x * term->char_width;
     uint8_t src_y = y * term->char_height;

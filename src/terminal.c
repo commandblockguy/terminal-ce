@@ -1,20 +1,15 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "terminal.h"
 #include <tice.h>
-
-#include <string.h>
 
 #include <fontlibc.h>
 #include <graphx.h>
 
-#include "terminal.h"
 #include "escape.h"
 
 #include "gfx/gfx.h"
 #include "graphics.h"
 
-void write_data(terminal_state_t *term, const char *data, size_t size) {
+void write_data(struct terminal_state *term, const char *data, size_t size) {
 	const char *current;
 	const char *end = data + size;
 
@@ -44,17 +39,17 @@ void write_data(terminal_state_t *term, const char *data, size_t size) {
 	}
 }
 
-void write_string(terminal_state_t *term, const char *str) {
+void write_string(struct terminal_state *term, const char *str) {
     write_data(term, str, strlen(str));
 }
 
-void set_cursor_pos(terminal_state_t *term, uint8_t x, uint8_t y) {
+void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y) {
 	/* Update the stored position */
 	term->csr_x = x;
 	term->csr_y = y;
 }
 
-void init_term(terminal_state_t *term) {
+void init_term(struct terminal_state *term) {
 	gfx_Begin();
 	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
 	gfx_FillScreen(BLACK);
@@ -79,7 +74,7 @@ void init_term(terminal_state_t *term) {
     set_cursor_pos(term, 1, 1);
 }
 
-void scroll_down(terminal_state_t *term) {
+void scroll_down(struct terminal_state *term) {
     if(term->csr_y == term->rows) {
         fontlib_ScrollWindowDown();
         erase_chars(term, 1, term->cols, term->rows);

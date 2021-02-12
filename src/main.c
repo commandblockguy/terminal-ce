@@ -2,7 +2,7 @@
  *--------------------------------------
  * Program Name: Terminal CE
  * Author: commandblockguy
- * License:
+ * License: MIT
  * Description: VT100 emulator for the TI-84+ CE
  *--------------------------------------
 */
@@ -10,12 +10,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 
-#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <keypadc.h>
 #include <graphx.h>
@@ -24,24 +20,24 @@
 
 #include <debug.h>
 
-#include <usbdrvce.h>
-#include <srldrvce.h>
-
 #include "terminal.h"
 #include "settings.h"
 #include "input.h"
 
-#include "gfx/gfx.h"
-#include "graphics.h"
-
 //#define ECHO
 #define SERIAL
 //#define TEST_DATA
+
+#ifdef TEST_DATA
 #define test_data lynx_out
 
-extern unsigned char test_data[15251];
+extern const unsigned char test_data[15251];
+#endif
 
 #ifdef SERIAL
+
+#include <usbdrvce.h>
+#include <srldrvce.h>
 
 #define SERIAL_BUF_SIZE 4096
 
@@ -49,7 +45,7 @@ struct event_callback_data {
     srl_device_t *srl;
     bool *has_device;
     char *buf;
-    terminal_state_t *term;
+    struct terminal_state *term;
 };
 
 struct srl_callback_data {
@@ -81,7 +77,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 	return USB_SUCCESS;
 }
 
-void serial_out(char *str, size_t len, void *data) {
+void serial_out(const char *str, size_t len, void *data) {
     struct srl_callback_data *srl_out = data;
     if(*srl_out->has_device) {
         srl_Write(srl_out->srl, str, len);
@@ -91,7 +87,7 @@ void serial_out(char *str, size_t len, void *data) {
 
 #ifdef ECHO
 /* Temporary? input callback function that echoes data to the terminal */
-void echo(char *str, size_t len, void *data) {
+void echo(const char *str, size_t len, void *data) {
 	dbg_sprintf(dbgout, "%s", str);
 	write_data(data, str, len);
 }
@@ -104,18 +100,18 @@ void ignore(char *str, size_t len, void *data) {
 #endif
 
 int main(void) {
-    static terminal_state_t term = {0};
+    static struct terminal_state term = {0};
 #ifdef SERIAL
 	usb_error_t error;
 	srl_device_t srl;
 	bool has_srl_device = false;
     static char srlbuf[4096];
+    uint8_t step = 0;
 #endif
-	uint8_t step = 0;
 
 	fontlib_font_t *font;
 
-	settings_t settings;
+	struct settings settings;
 
 	dbg_sprintf(dbgout, "\nProgram Started\n");
 
@@ -163,19 +159,18 @@ int main(void) {
 	        &term
 	};
 	if((error = usb_Init(handle_usb_event, &callback_data, srl_GetCDCStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
-	step = 1;
 
-	usb_HandleEvents();
+    usb_HandleEvents();
 
 #endif
 
 	while(!kb_IsDown(kb_KeyClear)) {
-		char buf[64];
-		uint8_t len = 0;
-
 		process_input(&term);
 
 #ifdef SERIAL
+        char buf[64];
+		uint8_t len = 0;
+
 		if(has_srl_device) {
             while(len < 64) {
                 uint8_t last;
@@ -197,8 +192,8 @@ int main(void) {
 #endif
     }
 
-	exit:
 #ifdef SERIAL
+    exit:
 	if(error) {
 		char buf[16];
 		sprintf(buf, "%u: 0x%X\n", step, error);

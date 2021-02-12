@@ -1,25 +1,16 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <tice.h>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <graphx.h>
 #include <fontlibc.h>
 #include <keypadc.h>
+#include <graphx.h>
 
 #include "terminal.h"
 #include "settings.h"
 
 #include "graphics.h"
 
-void menu(terminal_state_t *term) {
-	settings_t settings;
-	bool needs_reset = false;
+void menu(struct terminal_state *term) {
+	struct settings settings;
 	char *pack_long_name;
 
 	const uint8_t BORDER_SIZE = 4;
@@ -51,7 +42,6 @@ void menu(terminal_state_t *term) {
 	pack_long_name = fontlib_GetFontPackName(settings.font_pack_name);
 
 	if(pack_long_name) {
-		fontlib_font_t *font;
 		gfx_PrintStringXY(pack_long_name, (LCD_WIDTH - gfx_GetStringWidth(pack_long_name)) / 2, START_Y);
 	}
 

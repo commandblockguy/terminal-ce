@@ -13,6 +13,6 @@
 
 #include "terminal.h"
 
-void menu(terminal_state_t *term);
+void menu(struct terminal_state *term);
 
 #endif

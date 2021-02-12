@@ -1,19 +1,13 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "input.h"
 #include <tice.h>
 
-#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <keypadc.h>
 #include <graphx.h>
 #include <fontlibc.h>
 #include <debug.h>
 
-#include "terminal.h"
 #include "escape.h"
 #include "menu.h"
 
@@ -55,7 +49,7 @@ const char key_chars_lower[5][8] = {
 
 #define get_key(keys, lkey) ((keys)[((lkey) >> 8) - 1] & (lkey))
 
-void process_input(terminal_state_t *term) {
+void process_input(struct terminal_state *term) {
 	uint8_t i;
 	kb_key_t keys[7];
 
