@@ -20,6 +20,7 @@
 
 #include <debug.h>
 
+#include "graphics.h"
 #include "terminal.h"
 #include "settings.h"
 #include "input.h"
@@ -125,6 +126,7 @@ int main(void) {
 		}
 	}
 
+	init_graphics();
 	font = fontlib_GetFontByIndex(settings.font_pack_name, settings.reg_font);
 	if (font) {
 		fontlib_SetFont(font, 0);
@@ -132,7 +134,7 @@ int main(void) {
 		term.char_height = fontlib_GetCurrentFontHeight();
 	} else {
 		dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
-		gfx_End();
+		cleanup_graphics();
 		return 1;
 	}
 #ifdef ECHO
@@ -149,9 +151,7 @@ int main(void) {
 
 	init_term(&term);
 
-
 #ifdef SERIAL
-
 	struct event_callback_data callback_data = {
 	        &srl,
 	        &has_srl_device,
@@ -161,7 +161,6 @@ int main(void) {
 	if((error = usb_Init(handle_usb_event, &callback_data, srl_GetCDCStandardDescriptors(), USB_DEFAULT_INIT_FLAGS))) goto exit;
 
     usb_HandleEvents();
-
 #endif
 
 	while(!kb_IsDown(kb_KeyClear)) {
@@ -203,6 +202,6 @@ int main(void) {
 	}
 	usb_Cleanup();
 #endif
-	gfx_End();
+	cleanup_graphics();
 	return 0;
 }

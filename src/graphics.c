@@ -1,4 +1,5 @@
 #include "graphics.h"
+#include "gfx/gfx.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -6,9 +7,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <fontlibc.h>
 #include <graphx.h>
 #include <debug.h>
+#include <tice.h>
+#include <fontlibc.h>
+
+#define lcd_CrsrImage ((uint8_t*)0xE30800)
+#define lcd_CrsrImageLen 256
+
+void init_graphics(void) {
+    gfx_Begin();
+    gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
+    // Fill the entire buffer with the background color
+    memset(gfx_vram, 0, LCD_SIZE);
+    fontlib_SetWindowFullScreen();
+    fontlib_SetCursorPosition(0, 0);
+    fontlib_SetTransparency(false);
+    fontlib_SetFirstPrintableCodePoint(32);
+    fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP);
+
+    lcd_Timing2 = (uint32_t)(lcd_Timing2 & ~(uint32_t)0x03FF0000) | (uint32_t)(LCD_WIDTH - 1) << 16;
+
+    lcd_CrsrConfig = 0; // select 32x32, image0
+    lcd_CrsrPalette0 = 0x000000; // set black palette color
+    lcd_CrsrPalette1 = 0xFFFFFF; // set white palette color
+    lcd_CrsrXY = 0; // reset cursor position
+    lcd_CrsrClip = 0; // reset clipping
+    lcd_CrsrCtrl = 1; // enable cursor
+}
+
+void cleanup_graphics(void) {
+    lcd_CrsrCtrl = 0; // disable cursor
+    // reset timings to their defaults
+    lcd_Timing2 = (uint32_t)(lcd_Timing2 & ~(uint32_t)0x03FF0000) | (uint32_t)(LCD_HEIGHT - 1) << 16;
+    gfx_End();
+}
+
+void set_cursor_image(uint8_t width, uint8_t height) {
+    // todo: maybe optimize this
+    memset(lcd_CrsrImage, 0b10101010, lcd_CrsrImageLen);
+    for(uint8_t y = 0; y < height; y++) {
+        for(uint8_t x = 0; x < width; x++) {
+            lcd_CrsrImage[x / 4 + 8 * y] |= 0b11000000 >> ((x % 4) * 2);
+        }
+    }
+}
 
 void sgr(struct terminal_state *term, const uint24_t *args) {
 	struct graphics *graphics = &term->graphics;

@@ -24,6 +24,11 @@ enum base_colors {
     BASE_BLACK      = 1
 };
 
+void init_graphics(void);
+void cleanup_graphics(void);
+
+void set_cursor_image(uint8_t width, uint8_t height);
+
 /* Process a SGR sequence */
 void sgr(struct terminal_state *term, const uint24_t *args);
 

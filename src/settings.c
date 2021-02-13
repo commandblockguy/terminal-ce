@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "graphics.h"
 #include <stddef.h>
 
 #include <fileioc.h>

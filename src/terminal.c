@@ -47,19 +47,15 @@ void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y) {
 	/* Update the stored position */
 	term->csr_x = x;
 	term->csr_y = y;
+
+    uint24_t x_pos = (x - 1) * term->char_width;
+    uint24_t y_pos = (y - 1) * term->char_height;
+
+	lcd_CrsrXY = x_pos | ((uint32_t)y_pos << 16);
 }
 
 void init_term(struct terminal_state *term) {
-	gfx_Begin();
-	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
-	// Fill the entire buffer with the background color
-	memset(gfx_vram, 0, LCD_SIZE);
-	fontlib_SetWindowFullScreen();
-	fontlib_SetCursorPosition(0, 0);
-	fontlib_SetTransparency(false);
-	fontlib_SetFirstPrintableCodePoint(32);
-	fontlib_SetNewlineOptions(FONTLIB_ENABLE_AUTO_WRAP);
-	fontlib_SetColors(WHITE, BLACK);
+    fontlib_SetColors(WHITE, BLACK);
 
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;
@@ -73,6 +69,8 @@ void init_term(struct terminal_state *term) {
 	term->mode.dectecm = true;
 
 	term->graphics.view_offset = 0;
+
+    set_cursor_image(term->char_width, term->char_height);
 
     set_cursor_pos(term, 1, 1);
 }
