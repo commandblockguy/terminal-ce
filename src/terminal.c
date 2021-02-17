@@ -52,7 +52,8 @@ void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y) {
 void init_term(struct terminal_state *term) {
 	gfx_Begin();
 	gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
-	gfx_FillScreen(BLACK);
+	// Fill the entire buffer with the background color
+	memset(gfx_vram, 0, LCD_SIZE);
 	fontlib_SetWindowFullScreen();
 	fontlib_SetCursorPosition(0, 0);
 	fontlib_SetTransparency(false);
@@ -71,14 +72,22 @@ void init_term(struct terminal_state *term) {
 	term->mode.decarm = true;
 	term->mode.dectecm = true;
 
+	term->graphics.view_offset = 0;
+
     set_cursor_pos(term, 1, 1);
 }
 
 void scroll_down(struct terminal_state *term) {
     if(term->csr_y == term->rows) {
-        fontlib_ScrollWindowDown();
-        erase_chars(term, 1, term->cols, term->rows);
+        term->graphics.view_offset++;
+        if(term->graphics.view_offset * term->char_height > LCD_HEIGHT) {
+            // Shift the view back up to the base of VRAM
+            memcpy(gfx_vram, mpLcdBase, LCD_WIDTH * LCD_HEIGHT);
+            memset(gfx_vram + LCD_SIZE / 2, fontlib_GetBackgroundColor(), LCD_SIZE / 2);
+            term->graphics.view_offset = 0;
+        }
+        update_view_pos(term);
     } else {
-        term->csr_y++;
+        set_cursor_pos(term, term->csr_x, term->csr_y + 1);
     }
 }

@@ -161,7 +161,9 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void set_char_at(struct terminal_state *term, char c, uint8_t x, uint8_t y) {
-    fontlib_SetCursorPosition((x - 1) * term->char_width, (y - 1) * term->char_height);
+    uint24_t x_px = (x - 1) * term->char_width;
+    uint24_t y_px = (y - 1) * term->char_height;
+    fontlib_SetCursorPosition(x_px, y_px);
     fontlib_DrawGlyph(c);
 }
 
@@ -178,4 +180,9 @@ void delete_chars(struct terminal_state *term, uint8_t x, uint8_t y, uint8_t amo
     uint24_t width = amount * term->char_width;
     gfx_CopyRectangle(gfx_screen, gfx_screen, src_x, src_y, dst_x, src_y, width, term->char_height);
     erase_chars(term, x + amount, term->cols, y);
+}
+
+void update_view_pos(struct terminal_state *term) {
+    uint24_t lines = term->char_height * term->graphics.view_offset;
+    CurrentBuffer = mpLcdBase = gfx_vram + 320 * lines;
 }

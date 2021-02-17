@@ -18,6 +18,9 @@ struct graphics {
 	bool conceal     : 1;
 	bool crossed     : 1;
 	uint8_t base_col : 3;
+
+	// The number of rows from the beginning of VRAM to the beginning of the screen
+	uint24_t view_offset;
 };
 
 struct mode {

@@ -6,6 +6,9 @@
 #define NUM_GREYSCALE 24
 #define CUBE_SIZE 6
 
+#define mpLcdBase (*(void**)0xE30010)
+#define CurrentBuffer (*(void**)0xE30014)
+
 enum colors {
 	WHITE           = 15,
 	BLACK           = 0,
@@ -33,5 +36,7 @@ void update_fg_color(struct graphics *graphics);
 void set_char_at(struct terminal_state *term, char c, uint8_t x, uint8_t y);
 void erase_chars(struct terminal_state *term, uint8_t start_x, uint8_t end_x, uint8_t y);
 void delete_chars(struct terminal_state *term, uint8_t x, uint8_t y, uint8_t amount);
+
+void update_view_pos(struct terminal_state *term);
 
 #endif

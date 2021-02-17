@@ -72,21 +72,13 @@ void process_input(struct terminal_state *term) {
 	/* Handle 2nd key */
 	if(get_key(keys, kb_Key2nd)) {
 		term->mode_2nd = !term->mode_2nd;
-
-		gfx_SetColor(fontlib_GetBackgroundColor());
-		if(term->mode_2nd) gfx_SetColor(COL_2ND);
-
-		gfx_HorizLine(0, LCD_HEIGHT - 1, LCD_WIDTH / 2);
+		// todo: add visual indicator
 	}
 
 	/* Handle alpha key */
 	if(get_key(keys, kb_KeyAlpha)) {
 		term->mode_alpha = !term->mode_alpha;
-
-		gfx_SetColor(fontlib_GetBackgroundColor());
-		if(term->mode_alpha) gfx_SetColor(COL_ALPHA);
-		
-		gfx_HorizLine(LCD_WIDTH / 2, LCD_HEIGHT - 1, LCD_WIDTH / 2);
+        // todo: add visual indicator
 	}
 
 	/* Handle arrow key presses */
