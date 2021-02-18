@@ -65,14 +65,20 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
             srl_error_t error = srl_Init(cb_data->srl, device, cb_data->buf, SERIAL_BUF_SIZE, SRL_INTERFACE_ANY);
 
             if(error) {
+#ifdef DEBUG
+                char buf[50];
+                sprintf(buf, "Error %u initting serial\r\n", error);
+                write_string(cb_data->term, buf);
+#else
                 write_string(cb_data->term, "Error initting serial\r\n");
+#endif
             } else {
                 *cb_data->has_device = true;
             }
         }
     }
 	if(event == USB_DEVICE_DISCONNECTED_EVENT) {
-		dbg_sprintf(dbgout, "Device disconnected.\n");
+		dbg_printf("Device disconnected.\n");
 		*cb_data->has_device = false;
 	}
 	return USB_SUCCESS;
@@ -89,7 +95,7 @@ void serial_out(const char *str, size_t len, void *data) {
 #ifdef ECHO
 /* Temporary? input callback function that echoes data to the terminal */
 void echo(const char *str, size_t len, void *data) {
-	dbg_sprintf(dbgout, "%s", str);
+	dbg_printf("%s", str);
 	write_data(data, str, len);
 }
 #endif
@@ -114,7 +120,7 @@ int main(void) {
 
 	struct settings settings;
 
-	dbg_sprintf(dbgout, "\nProgram Started\n");
+	dbg_printf("\nProgram Started\n");
 
 	ti_CloseAll();
 
@@ -186,7 +192,7 @@ int main(void) {
 #endif
 #ifdef TEST_DATA
 		write_data(&term, &test_data[i], 1);
-        dbg_sprintf(dbgout, "%c", test_data[i]);
+        dbg_printf("%c", test_data[i]);
         i++;
 #endif
     }

@@ -241,12 +241,12 @@ void csi_vpa(struct terminal_state *term, uint8_t row) {
 }
 
 void process_complete_csi_sequence(struct terminal_state *term, char c, const uint24_t *args) {
-    dbg_sprintf(dbgout, "CSI sequence %c(", c);
+    dbg_printf("CSI sequence %c(", c);
     for(uint8_t j = 0; j < 16; j++) {
-        dbg_sprintf(dbgout, "%u;", args[j]);
+        dbg_printf("%u;", args[j]);
         if(args[j + 1] == 0) break;
     }
-    dbg_sprintf(dbgout, ")\n");
+    dbg_printf(")\n");
 
     switch(c) {
 
@@ -348,12 +348,12 @@ void csi_private_set_mode(struct terminal_state *term, uint24_t option, bool val
 }
 
 void process_private_csi_sequence(struct terminal_state *term, char c, const uint24_t *args) {
-    dbg_sprintf(dbgout, "Private CSI sequence %c(", c);
+    dbg_printf("Private CSI sequence %c(", c);
     for(uint8_t j = 0; j < 16; j++) {
-        dbg_sprintf(dbgout, "%u;", args[j]);
+        dbg_printf("%u;", args[j]);
         if(args[j + 1] == 0) break;
     }
-    dbg_sprintf(dbgout, ")\n");
+    dbg_printf(")\n");
 
     switch(c) {
         case 'h':  /* SM */
@@ -401,7 +401,7 @@ bool process_esc_sequence(struct terminal_state *term, char *seq, uint8_t len) {
 	        if(len == 1) return true;
 	        switch(seq[1]) {
 	            default:
-	                dbg_sprintf(dbgout, "Unimplemented char set: ESC ( %c\n", seq[1]);
+	                dbg_printf("Unimplemented char set: ESC ( %c\n", seq[1]);
 	        }
 	        return false;
 
@@ -409,7 +409,7 @@ bool process_esc_sequence(struct terminal_state *term, char *seq, uint8_t len) {
             if(len == 1) return true;
             switch(seq[1]) {
                 default:
-                    dbg_sprintf(dbgout, "Unimplemented char set: ESC ) %c\n", seq[1]);
+                    dbg_printf("Unimplemented char set: ESC ) %c\n", seq[1]);
             }
             return false;
 
