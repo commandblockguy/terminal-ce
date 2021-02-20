@@ -57,7 +57,12 @@ struct srl_callback_data {
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 								  usb_callback_data_t *callback_data) {
     const struct event_callback_data *cb_data = callback_data;
-    if((event == USB_DEVICE_CONNECTED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) || event == USB_HOST_CONFIGURE_EVENT) {
+    if(event == USB_DEVICE_CONNECTED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) {
+        usb_device_t device = event_data;
+        write_string(cb_data->term, "connected\r\n");
+        usb_ResetDevice(device);
+    }
+    if((event == USB_DEVICE_ENABLED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) || event == USB_HOST_CONFIGURE_EVENT) {
         if(!*cb_data->has_device) {
             usb_device_t device = event_data;
 
@@ -74,6 +79,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 #endif
             } else {
                 *cb_data->has_device = true;
+                srl_SetRate(cb_data->srl, 9600);
             }
         }
     }
