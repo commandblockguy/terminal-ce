@@ -33,7 +33,6 @@ void init_graphics(void) {
     lcd_CrsrPalette1 = 0xFFFFFF; // set white palette color
     lcd_CrsrXY = 0; // reset cursor position
     lcd_CrsrClip = 0; // reset clipping
-    lcd_CrsrCtrl = 1; // enable cursor
 }
 
 void cleanup_graphics(void) {
@@ -51,6 +50,7 @@ void set_cursor_image(uint8_t width, uint8_t height) {
             lcd_CrsrImage[x / 4 + 8 * y] |= 0b11000000 >> ((x % 4) * 2);
         }
     }
+    lcd_CrsrCtrl = 1; // enable cursor
 }
 
 void sgr(struct terminal_state *term, const uint24_t *args) {

@@ -146,6 +146,12 @@ int main(void) {
 		term.char_height = fontlib_GetCurrentFontHeight();
 	} else {
 		dbg_sprintf(dbgerr, "Failed to load font pack %.8s\n", settings.font_pack_name);
+		gfx_SetTextFGColor(WHITE);
+		gfx_SetTextBGColor(BLACK);
+		gfx_PrintStringXY("Font not found: ", 1, 1);
+		gfx_PrintString(settings.font_pack_name);
+        while(kb_AnyKey()) kb_Scan();
+        while(!kb_AnyKey()) kb_Scan();
 		cleanup_graphics();
 		return 1;
 	}
