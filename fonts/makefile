@@ -16,7 +16,7 @@ TomThumb.bin: tomthumb4x6-6.fnt
 	TomThumb.bin
 
 %.8xv: %.bin
-	convhex -a -v -n $* $< $@
+	convbin -r -k 8xv -n $* -i $< -o $@   
 
 clean:
 	rm -f $(wildcard *.8xv)
