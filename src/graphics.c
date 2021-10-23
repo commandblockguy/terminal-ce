@@ -204,17 +204,11 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b) {
 
 }
 
-void set_char_at(struct terminal_state *term, char c, uint8_t x, uint8_t y) {
-    uint24_t x_px = (x - 1) * term->char_width;
-    uint24_t y_px = (y - 1) * term->char_height;
-    fontlib_SetCursorPosition(x_px, y_px);
-    fontlib_DrawGlyph(c);
-}
-
 void erase_chars(struct terminal_state *term, uint8_t start_x, uint8_t end_x, uint8_t y) {
-    for(uint8_t x = start_x; x <= end_x; x++) {
-        set_char_at(term, ' ', x, y);
-    }
+    gfx_FillRectangle((start_x - 1) * term->char_width,
+                      (y - 1) * term->char_height,
+                      (end_x - start_x + 1) * term->char_width,
+                      term->char_height);
 }
 
 void delete_chars(struct terminal_state *term, uint8_t x, uint8_t y, uint8_t amount) {

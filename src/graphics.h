@@ -38,7 +38,6 @@ uint8_t true_color_to_palette(uint8_t r, uint8_t g, uint8_t b);
 /* Calculate the text foreground color based on graphics attributes */
 void update_fg_color(struct graphics *graphics);
 
-void set_char_at(struct terminal_state *term, char c, uint8_t x, uint8_t y);
 void erase_chars(struct terminal_state *term, uint8_t start_x, uint8_t end_x, uint8_t y);
 void delete_chars(struct terminal_state *term, uint8_t x, uint8_t y, uint8_t amount);
 

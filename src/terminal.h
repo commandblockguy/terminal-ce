@@ -70,6 +70,7 @@ void write_data(struct terminal_state *term, const char *data, size_t size);
 void write_string(struct terminal_state *term, const char *str);
 
 void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y);
+void update_cursor(struct terminal_state *term);
 
 void scroll_down(struct terminal_state *term);
 

@@ -16,9 +16,9 @@ void write_data(struct terminal_state *term, const char *data, size_t size) {
 		/* Don't draw anything if we are in the middle of an escape sequence,
 		 * or if the character isn't printable */
 		if(!term->esc_buf_len && *current >= ' ') {
-            set_char_at(term, *current, term->csr_x, term->csr_y);
+            fontlib_DrawGlyph(*current);
 
-            set_cursor_pos(term, term->csr_x + 1, term->csr_y);
+            term->csr_x++;
 
             if(term->csr_x > term->cols) {
                 if(term->mode.decawm) {
@@ -36,6 +36,8 @@ void write_data(struct terminal_state *term, const char *data, size_t size) {
 		/* Process the escape sequence */
 		process_escape_sequence(term);
 	}
+
+    update_cursor(term);
 }
 
 void write_string(struct terminal_state *term, const char *str) {
@@ -46,11 +48,17 @@ void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y) {
 	/* Update the stored position */
 	term->csr_x = x;
 	term->csr_y = y;
+    /* Update fontlib cursor position */
+    uint24_t x_px = (x - 1) * term->char_width;
+    uint24_t y_px = (y - 1) * term->char_height;
+    fontlib_SetCursorPosition(x_px, y_px);
+}
 
-    uint24_t x_pos = (x - 1) * term->char_width;
-    uint24_t y_pos = (y - 1) * term->char_height;
+void update_cursor(struct terminal_state *term) {
+    uint24_t x_pos = (term->csr_x - 1) * term->char_width;
+    uint24_t y_pos = (term->csr_y - 1) * term->char_height;
 
-	lcd_CrsrXY = x_pos | ((uint32_t)y_pos << 16);
+    lcd_CrsrXY = x_pos | ((uint32_t)y_pos << 16);
 }
 
 void init_term(struct terminal_state *term) {
@@ -77,6 +85,7 @@ void init_term(struct terminal_state *term) {
 }
 
 void scroll_down(struct terminal_state *term) {
+    // todo: fix this
     if(term->csr_y == term->rows) {
         term->graphics.view_offset++;
         if(term->graphics.view_offset * term->char_height > LCD_HEIGHT) {
