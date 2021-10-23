@@ -1,21 +1,16 @@
 #include "input.h"
-#include <tice.h>
 
 #include <stdio.h>
 
 #include <keypadc.h>
-#include <graphx.h>
-#include <fontlibc.h>
 #include <debug.h>
 
 #include "escape.h"
 #include "menu.h"
 
-#include "graphics.h"
-
 #define KEY_CHAR_COL_OFFSET 1
 
-const char key_chars_std  [5][8] = {
+const char key_chars_std[5][8] = {
 	"\0\0\0\0\0\0#\0",
 	"0147,@\0\x08",
 	".258(<\0\0",
@@ -23,7 +18,7 @@ const char key_chars_std  [5][8] = {
 	"\x0D+-*/^\0\0"
 };
 
-const char key_chars_2nd  [5][8] = {
+const char key_chars_2nd[5][8] = {
 	"\0\0\0\0\0\0=\0",
 	"\0!$&`\0\0\0",
 	"|@%*{\0\0$",
@@ -49,16 +44,59 @@ const char key_chars_lower[5][8] = {
 
 #define get_key(keys, lkey) ((keys)[((lkey) >> 8) - 1] & (lkey))
 
+static const char (*get_key_chars(struct terminal_state *term))[8]  {
+    if(term->mode_2nd) {
+        if(term->mode_alpha) return key_chars_lower;
+        else return key_chars_2nd;
+    } else {
+        if(term->mode_alpha) return key_chars_upper;
+        else return key_chars_std;
+    }
+}
+
+static char convert_to_ctrl(char val) {
+    if(val >= 'a' && val <= 'z')
+        return val - 'a' + 1;
+    else if(val >= 'A' && val <= '[')
+        return val - 'A' + 1;
+    else {
+        dbg_sprintf(dbgerr, "Bad ctrl char '%c'\n", val);
+        return 0;
+    }
+}
+
+void send_input(struct terminal_state *term, const char *data, size_t len) {
+    if(len && term->input_callback) {
+        (*term->input_callback)(data, len, term->callback_data);
+    }
+}
+
+static void handle_arrow_keys(struct terminal_state *term, const kb_key_t *keys) {
+    for(uint8_t i = 0; i < 4; i++) {
+        if(keys[6] & (1 << i)) {
+            const char codes[4] = "BDCA";
+            char seq[3] = CSI_SEQ;
+
+            /* Output the CSI escape sequence */
+            seq[2] = codes[i];
+
+            send_input(term, seq, sizeof seq);
+        }
+    }
+}
+
+static void send_stty(struct terminal_state *term) {
+    char buf[50];
+    size_t len = sprintf(buf, "stty rows %2u cols %2u\n",
+                         term->rows, term->cols);
+    send_input(term, buf, len);
+}
+
 void process_input(struct terminal_state *term) {
-	uint8_t i;
-	kb_key_t keys[7];
-
-	char buf[25];
-	uint8_t len = 0;
-
 	kb_Scan();
 
-	for(i = 0; i < 7; i++) {
+    kb_key_t keys[7];
+	for(uint8_t i = 0; i < 7; i++) {
 		keys[i] = kb_Data[i + 1] & ~term->held_keys[i];
 		term->held_keys[i] = kb_Data[i + 1];
 	}
@@ -81,70 +119,31 @@ void process_input(struct terminal_state *term) {
         // todo: add visual indicator
 	}
 
-	/* Handle arrow key presses */
-	for(i = 0; i < 4; i++) {
-		if(keys[6] & (1 << i)) {
-			const char codes[4] = "BDCA";
-			const size_t len_diff = strlen(CSI_SEQ) + 1;
-
-			/* Break if there is no room for the arrow key sequence */
-			if(len + len_diff > 24) break;
-
-			/* Output the CSI escape sequence */
-			memcpy(&buf[len], CSI_SEQ, strlen(CSI_SEQ));
-
-			/* Output the character that corresponds to this arrow key */
-			buf[len + strlen(CSI_SEQ)] = codes[i];
-
-			len += len_diff;
-		}
-	}
+    handle_arrow_keys(term, keys);
 
     /* Handle F1+window key (send stty command) */
     if(kb_IsDown(kb_KeyYequ) && get_key(keys, kb_KeyWindow)) {
-        if(len + 21 < 25) {
-            sprintf(&buf[len], "stty rows %2u cols %2u\n",
-                    term->rows, term->cols);
-            len += 21;
-        }
+        send_stty(term);
     }
 
 	/* Handle regular keypresses */
 	/* Check each keypad group */
-	for(i = 0; i < 6 - KEY_CHAR_COL_OFFSET; i++) {
-		int j;
+	for(uint8_t i = 0; i < 6 - KEY_CHAR_COL_OFFSET; i++) {
 		/* Check each bit of the group */
-		for(j = 0; j < 8; j++) {
-			/* If there is no room, stop */
-			if(len >= 24) goto skip_input;
-
+		for(int j = 0; j < 8; j++) {
 			/* Check if key is pressed */
 			if(keys[i + KEY_CHAR_COL_OFFSET] & (1 << j)) {
-				const char (*key_chars)[8];
-				char val;
-				if(term->mode_2nd) {
-					if(term->mode_alpha) key_chars = key_chars_lower;
-					else key_chars = key_chars_2nd;
-				} else {
-					if(term->mode_alpha) key_chars = key_chars_upper;
-					else key_chars = key_chars_std;
-				}
+				const char (*key_chars)[8] = get_key_chars(term);
 
-				val = key_chars[i][j];
+				char val = key_chars[i][j];
 
 				/* Check if F1, the "ctrl key" is pressed */
 				if(kb_IsDown(kb_KeyYequ)) {
-					if(val >= 'a' && val <= 'z') val = val - 'a' + 1;
-					else if(val >= 'A' && val <= '[') val = val - 'A' + 1;
-					else {
-						dbg_sprintf(dbgerr, "Bad ctrl char '%c'\n", val);
-						val = 0;
-					}
+					val = convert_to_ctrl(val);
 				}
 
 				if(val) {
-					buf[len] = val;
-					len++;
+                    send_input(term, &val, 1);
 				}
 			}
 		}
@@ -152,23 +151,6 @@ void process_input(struct terminal_state *term) {
 
 	if(get_key(keys, kb_KeyDel)) {
 		const char seq_del[] = CSI_SEQ "3~";
-		const size_t len_diff = strlen(seq_del);
-
-		/* If there is room for the sequence */
-		if(len + len_diff <= 24) {
-			/* Output the CSI escape sequence for delete */
-			memcpy(&buf[len], seq_del, len_diff);
-
-			len += len_diff;
-		}
+        send_input(term, seq_del, strlen(seq_del));
 	}
-
-	skip_input:
-
-	buf[len] = 0;
-
-	if(len && term->input_callback) {
-		(*term->input_callback)(buf, len, term->callback_data);
-	}
-
 }
