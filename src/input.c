@@ -150,7 +150,7 @@ void process_input(struct terminal_state *term) {
 	}
 
 	if(get_key(keys, kb_KeyDel)) {
-		const char seq_del[] = CSI_SEQ "3~";
+		const char seq_del[] = "\b";
         send_input(term, seq_del, strlen(seq_del));
 	}
 }
