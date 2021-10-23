@@ -65,9 +65,8 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
     if((event == USB_DEVICE_ENABLED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) || event == USB_HOST_CONFIGURE_EVENT) {
         if(!*cb_data->has_device) {
             usb_device_t device = event_data;
-
             /* Initialize the serial library with the newly attached device */
-            srl_error_t error = srl_Init(cb_data->srl, device, cb_data->buf, SERIAL_BUF_SIZE, SRL_INTERFACE_ANY);
+            srl_error_t error = srl_Open(cb_data->srl, device, cb_data->buf, SERIAL_BUF_SIZE, SRL_INTERFACE_ANY, 9600);
 
             if(error) {
 #ifdef DEBUG
@@ -79,7 +78,6 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
 #endif
             } else {
                 *cb_data->has_device = true;
-                srl_SetRate(cb_data->srl, 9600);
             }
         }
     }
@@ -127,8 +125,6 @@ int main(void) {
 	struct settings settings;
 
 	dbg_printf("\nProgram Started\n");
-
-	ti_CloseAll();
 
 	if(!read_settings(&settings)) {
 		write_default_settings();
