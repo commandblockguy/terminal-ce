@@ -55,6 +55,8 @@ void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y) {
 
 void init_term(struct terminal_state *term) {
     fontlib_SetColors(WHITE, BLACK);
+    term->char_width = fontlib_GetStringWidth(" ");
+    term->char_height = fontlib_GetCurrentFontHeight();
 
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;

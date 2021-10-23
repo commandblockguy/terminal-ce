@@ -24,4 +24,4 @@ add_executable(dummy
         src/settings.c
         src/settings.h
         src/terminal.c
-        src/terminal.h)
+        src/terminal.h src/serial.c src/serial.h)
