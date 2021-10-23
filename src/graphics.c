@@ -1,5 +1,4 @@
 #include "graphics.h"
-#include "gfx/gfx.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,12 +11,14 @@
 #include <tice.h>
 #include <fontlibc.h>
 
+#include "palette.h"
+
 #define lcd_CrsrImage ((uint8_t*)0xE30800)
 #define lcd_CrsrImageLen 256
 
 void init_graphics(void) {
     gfx_Begin();
-    gfx_SetPalette(gfx_pal, sizeof_gfx_pal, 0);
+    gfx_SetPalette(gfx_pal, sizeof gfx_pal, 0);
     // Fill the entire buffer with the background color
     memset(gfx_vram, 0, LCD_SIZE);
     fontlib_SetWindowFullScreen();

@@ -6,7 +6,6 @@
 
 #include "escape.h"
 
-#include "gfx/gfx.h"
 #include "graphics.h"
 
 void write_data(struct terminal_state *term, const char *data, size_t size) {
