@@ -29,9 +29,18 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
         write_string(cb_data->term, "connected\r\n");
         usb_ResetDevice(device);
     }
-    if((event == USB_DEVICE_ENABLED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) || event == USB_HOST_CONFIGURE_EVENT) {
+    if(event == USB_HOST_CONFIGURE_EVENT || (event == USB_DEVICE_ENABLED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE))) {
         if(!*cb_data->has_device) {
-            usb_device_t device = event_data;
+            usb_device_t device;
+            if(event == USB_HOST_CONFIGURE_EVENT) {
+                /* Use the device representing the USB host. */
+                device = usb_FindDevice(NULL, NULL, USB_SKIP_HUBS);
+                if(device == NULL) return USB_SUCCESS;
+            } else {
+                /* Use the newly enabled device */
+                device = event_data;
+            }
+
             /* Initialize the serial library with the newly attached device */
             srl_error_t error = srl_Open(cb_data->srl, device, cb_data->buf, SERIAL_BUF_SIZE, SRL_INTERFACE_ANY, 9600);
 
