@@ -10,8 +10,6 @@
 #define CurrentBuffer (*(void**)0xE30014)
 
 enum colors {
-	WHITE           = 15,
-	BLACK           = 0,
 	COL_2ND         = 81,
 	COL_ALPHA       = 155,
 	BRIGHT_START    = 8,
@@ -20,8 +18,14 @@ enum colors {
 };
 
 enum base_colors {
-    BASE_WHITE      = 0,
-    BASE_BLACK      = 1
+    BLACK      = 0,
+    RED        = 1,
+    GREEN      = 2,
+    YELLOW     = 3,
+    BLUE       = 4,
+    MAGENTA    = 5,
+    CYAN       = 6,
+    WHITE      = 7,
 };
 
 void init_graphics(void);

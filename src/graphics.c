@@ -75,7 +75,7 @@ void sgr(struct terminal_state *term, const uint24_t *args) {
 			graphics->underline = false;
 			graphics->conceal = false;
 			graphics->crossed = false;
-			graphics->base_col = BASE_WHITE;
+			graphics->base_col = WHITE;
 			update_fg_color(graphics);
             fontlib_SetBackgroundColor(BLACK);
 			break;
@@ -138,7 +138,7 @@ void sgr(struct terminal_state *term, const uint24_t *args) {
 			return;
 
 		case 39:
-			graphics->base_col = BASE_WHITE;
+			graphics->base_col = WHITE;
             update_fg_color(graphics);
 			break;
 
