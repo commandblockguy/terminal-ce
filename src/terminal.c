@@ -3,6 +3,7 @@
 
 #include <fontlibc.h>
 #include <graphx.h>
+#include <stdio.h>
 
 #include "escape.h"
 
@@ -40,6 +41,12 @@ void write_data(struct terminal_state *term, const char *data, size_t size) {
     update_cursor(term);
 }
 
+void send_input(struct terminal_state *term, const char *data, size_t len) {
+    if(len && term->input_callback) {
+        (*term->input_callback)(data, len, term->callback_data);
+    }
+}
+
 void write_string(struct terminal_state *term, const char *str) {
     write_data(term, str, strlen(str));
 }
@@ -61,7 +68,9 @@ void update_cursor(struct terminal_state *term) {
     lcd_CrsrXY = x_pos | ((uint32_t)y_pos << 16);
 }
 
-void init_term(struct terminal_state *term) {
+void init_term(struct terminal_state *term, const struct settings *settings) {
+    term->settings = settings;
+
     fontlib_SetColors(WHITE, BLACK);
     term->char_width = fontlib_GetStringWidth(" ");
     term->char_height = fontlib_GetCurrentFontHeight();
@@ -98,4 +107,11 @@ void scroll_down(struct terminal_state *term) {
     } else {
         set_cursor_pos(term, term->csr_x, term->csr_y + 1);
     }
+}
+
+void send_stty(struct terminal_state *term) {
+    char buf[50];
+    size_t len = sprintf(buf, "stty rows %2u cols %2u\n",
+                         term->rows, term->cols);
+    send_input(term, buf, len);
 }

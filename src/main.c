@@ -52,7 +52,7 @@ int main(void) {
     }
 
     static struct terminal_state term = {0};
-    init_term(&term);
+    init_term(&term, &settings);
     init_serial(&term);
 
     while(!kb_IsDown(kb_KeyClear)) {

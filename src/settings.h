@@ -12,6 +12,8 @@ struct settings {
 	uint8_t bold_font;
 	uint8_t color_mode;
 	uint16_t colors[18];
+    uint32_t repeat_delay;
+    uint32_t repeat_rate;
 };
 
 bool write_default_settings(void);

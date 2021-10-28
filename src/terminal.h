@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "settings.h"
+
 struct state_backup {
 	uint8_t csr_x;
 	uint8_t csr_y;
@@ -57,6 +59,8 @@ struct terminal_state {
 	uint8_t char_width;
 	uint8_t char_height;
 
+    const struct settings *settings;
+
     void (*input_callback)(const char* pressed, size_t length, void* callback_data);
     void *callback_data;
 
@@ -68,12 +72,15 @@ struct terminal_state {
 
 void write_data(struct terminal_state *term, const char *data, size_t size);
 void write_string(struct terminal_state *term, const char *str);
+void send_input(struct terminal_state *term, const char *data, size_t len);
 
 void set_cursor_pos(struct terminal_state *term, uint8_t x, uint8_t y);
 void update_cursor(struct terminal_state *term);
 
 void scroll_down(struct terminal_state *term);
 
-void init_term(struct terminal_state *term);
+void init_term(struct terminal_state *term, const struct settings *settings);
+
+void send_stty(struct terminal_state *term);
 
 #endif

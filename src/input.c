@@ -1,149 +1,147 @@
 #include "input.h"
 
-#include <stdio.h>
-
 #include <keypadc.h>
 #include <debug.h>
 
 #include "escape.h"
 #include "menu.h"
 
-#define KEY(key, val) [((key) >> 8) - 1][__builtin_ctz((key) & 0xFF)] = (val)
+#define GROUP(lkey) ((lkey) >> 8)
+#define KEY(lkey) (__builtin_ctz((lkey) & 0xFF))
+#define MAP_KEY(lkey, val) [GROUP(lkey)][KEY(lkey)] = (val)
 
-const char key_chars_std[6][8] = {
+const char key_chars_std[7][8] = {
         // As labeled
-        KEY(kb_Key0, '0'),
-        KEY(kb_Key1, '1'),
-        KEY(kb_Key2, '2'),
-        KEY(kb_Key3, '3'),
-        KEY(kb_Key4, '4'),
-        KEY(kb_Key5, '5'),
-        KEY(kb_Key6, '6'),
-        KEY(kb_Key7, '7'),
-        KEY(kb_Key8, '8'),
-        KEY(kb_Key9, '9'),
-        KEY(kb_KeyDecPnt, '.'),
-        KEY(kb_KeyChs, '-'),
-        KEY(kb_KeyAdd, '+'),
-        KEY(kb_KeySub, '-'),
-        KEY(kb_KeyMul, '*'),
-        KEY(kb_KeyDiv, '/'),
-        KEY(kb_KeyPower, '^'),
-        KEY(kb_KeyComma, ','),
-        KEY(kb_KeyLParen, '('),
-        KEY(kb_KeyRParen, ')'),
-        KEY(kb_KeyEnter, '\n'),
+        MAP_KEY(kb_Key0, '0'),
+        MAP_KEY(kb_Key1, '1'),
+        MAP_KEY(kb_Key2, '2'),
+        MAP_KEY(kb_Key3, '3'),
+        MAP_KEY(kb_Key4, '4'),
+        MAP_KEY(kb_Key5, '5'),
+        MAP_KEY(kb_Key6, '6'),
+        MAP_KEY(kb_Key7, '7'),
+        MAP_KEY(kb_Key8, '8'),
+        MAP_KEY(kb_Key9, '9'),
+        MAP_KEY(kb_KeyDecPnt, '.'),
+        MAP_KEY(kb_KeyChs, '-'),
+        MAP_KEY(kb_KeyAdd, '+'),
+        MAP_KEY(kb_KeySub, '-'),
+        MAP_KEY(kb_KeyMul, '*'),
+        MAP_KEY(kb_KeyDiv, '/'),
+        MAP_KEY(kb_KeyPower, '^'),
+        MAP_KEY(kb_KeyComma, ','),
+        MAP_KEY(kb_KeyLParen, '('),
+        MAP_KEY(kb_KeyRParen, ')'),
+        MAP_KEY(kb_KeyEnter, '\n'),
         // From Python app
-        KEY(kb_KeySto, '='),
+        MAP_KEY(kb_KeySto, '='),
         // Custom
-        KEY(kb_KeySin, '@'),
-        KEY(kb_KeyCos, '<'),
-        KEY(kb_KeyTan, '>'),
-        KEY(kb_KeyMode, '\b'),
+        MAP_KEY(kb_KeySin, '@'),
+        MAP_KEY(kb_KeyCos, '<'),
+        MAP_KEY(kb_KeyTan, '>'),
+        MAP_KEY(kb_KeyMode, '\b'),
 };
 
-const char key_chars_2nd[6][8] = {
+const char key_chars_2nd[7][8] = {
         // As labeled
-        KEY(kb_KeyLParen, '{'),
-        KEY(kb_KeyRParen, '}'),
-        KEY(kb_KeyMul, '['),
-        KEY(kb_KeySub, ']'),
+        MAP_KEY(kb_KeyLParen, '{'),
+        MAP_KEY(kb_KeyRParen, '}'),
+        MAP_KEY(kb_KeyMul, '['),
+        MAP_KEY(kb_KeySub, ']'),
         // From Python app
         // the guidebook says it's supposed to be GraphVar, but it's actually Power
-        KEY(kb_KeyPower, '\\'),
-        KEY(kb_Key3, '#'),
-        KEY(kb_KeyAdd, '\''),
-        KEY(kb_KeyChs, '_'),
-        KEY(kb_KeyEnter, '\t'),
+        MAP_KEY(kb_KeyPower, '\\'),
+        MAP_KEY(kb_Key3, '#'),
+        MAP_KEY(kb_KeyAdd, '\''),
+        MAP_KEY(kb_KeyChs, '_'),
+        MAP_KEY(kb_KeyEnter, '\t'),
         // Custom
-        KEY(kb_Key2, '@'),
-        KEY(kb_Key4, '$'),
-        KEY(kb_Key5, '%'),
-        KEY(kb_Key6, '|'),
-        KEY(kb_Key7, '&'),
-        KEY(kb_Key8, '~'),
-        KEY(kb_Key9, '`'),
-        KEY(kb_KeyMode, '\b'),
+        MAP_KEY(kb_Key2, '@'),
+        MAP_KEY(kb_Key4, '$'),
+        MAP_KEY(kb_Key5, '%'),
+        MAP_KEY(kb_Key6, '|'),
+        MAP_KEY(kb_Key7, '&'),
+        MAP_KEY(kb_Key8, '~'),
+        MAP_KEY(kb_Key9, '`'),
+        MAP_KEY(kb_KeyMode, '\b'),
 };
 
-const char key_chars_upper[6][8] = {
+const char key_chars_upper[7][8] = {
         // As labeled
-        KEY(kb_KeyMath, 'A'),
-        KEY(kb_KeyApps, 'B'),
-        KEY(kb_KeyPrgm, 'C'),
-        KEY(kb_KeyRecip, 'D'),
-        KEY(kb_KeySin, 'E'),
-        KEY(kb_KeyCos, 'F'),
-        KEY(kb_KeyTan, 'G'),
-        KEY(kb_KeyPower, 'H'),
-        KEY(kb_KeySquare, 'I'),
-        KEY(kb_KeyComma, 'J'),
-        KEY(kb_KeyLParen, 'K'),
-        KEY(kb_KeyRParen, 'L'),
-        KEY(kb_KeyDiv, 'M'),
-        KEY(kb_KeyLog, 'N'),
-        KEY(kb_Key7, 'O'),
-        KEY(kb_Key8, 'P'),
-        KEY(kb_Key9, 'Q'),
-        KEY(kb_KeyMul, 'R'),
-        KEY(kb_KeyLn, 'S'),
-        KEY(kb_Key4, 'T'),
-        KEY(kb_Key5, 'U'),
-        KEY(kb_Key6, 'V'),
-        KEY(kb_KeySub, 'W'),
-        KEY(kb_KeySto, 'X'),
-        KEY(kb_Key1, 'Y'),
-        KEY(kb_Key2, 'Z'),
-        KEY(kb_Key0, ' '),
-        KEY(kb_KeyDecPnt, ':'),
-        KEY(kb_KeyChs, '?'),
-        KEY(kb_KeyAdd, '"'),
+        MAP_KEY(kb_KeyMath, 'A'),
+        MAP_KEY(kb_KeyApps, 'B'),
+        MAP_KEY(kb_KeyPrgm, 'C'),
+        MAP_KEY(kb_KeyRecip, 'D'),
+        MAP_KEY(kb_KeySin, 'E'),
+        MAP_KEY(kb_KeyCos, 'F'),
+        MAP_KEY(kb_KeyTan, 'G'),
+        MAP_KEY(kb_KeyPower, 'H'),
+        MAP_KEY(kb_KeySquare, 'I'),
+        MAP_KEY(kb_KeyComma, 'J'),
+        MAP_KEY(kb_KeyLParen, 'K'),
+        MAP_KEY(kb_KeyRParen, 'L'),
+        MAP_KEY(kb_KeyDiv, 'M'),
+        MAP_KEY(kb_KeyLog, 'N'),
+        MAP_KEY(kb_Key7, 'O'),
+        MAP_KEY(kb_Key8, 'P'),
+        MAP_KEY(kb_Key9, 'Q'),
+        MAP_KEY(kb_KeyMul, 'R'),
+        MAP_KEY(kb_KeyLn, 'S'),
+        MAP_KEY(kb_Key4, 'T'),
+        MAP_KEY(kb_Key5, 'U'),
+        MAP_KEY(kb_Key6, 'V'),
+        MAP_KEY(kb_KeySub, 'W'),
+        MAP_KEY(kb_KeySto, 'X'),
+        MAP_KEY(kb_Key1, 'Y'),
+        MAP_KEY(kb_Key2, 'Z'),
+        MAP_KEY(kb_Key0, ' '),
+        MAP_KEY(kb_KeyDecPnt, ':'),
+        MAP_KEY(kb_KeyChs, '?'),
+        MAP_KEY(kb_KeyAdd, '"'),
         // From Python app
-        KEY(kb_Key3, '@'),
+        MAP_KEY(kb_Key3, '@'),
         // Custom
-        KEY(kb_KeyMode, '\b'),
+        MAP_KEY(kb_KeyMode, '\b'),
 };
 
-const char key_chars_lower[6][8] = {
+const char key_chars_lower[7][8] = {
         // As labeled
-        KEY(kb_KeyMath, 'a'),
-        KEY(kb_KeyApps, 'b'),
-        KEY(kb_KeyPrgm, 'c'),
-        KEY(kb_KeyRecip, 'd'),
-        KEY(kb_KeySin, 'e'),
-        KEY(kb_KeyCos, 'f'),
-        KEY(kb_KeyTan, 'g'),
-        KEY(kb_KeyPower, 'h'),
-        KEY(kb_KeySquare, 'i'),
-        KEY(kb_KeyComma, 'j'),
-        KEY(kb_KeyLParen, 'k'),
-        KEY(kb_KeyRParen, 'l'),
-        KEY(kb_KeyDiv, 'm'),
-        KEY(kb_KeyLog, 'n'),
-        KEY(kb_Key7, 'o'),
-        KEY(kb_Key8, 'p'),
-        KEY(kb_Key9, 'q'),
-        KEY(kb_KeyMul, 'r'),
-        KEY(kb_KeyLn, 's'),
-        KEY(kb_Key4, 't'),
-        KEY(kb_Key5, 'u'),
-        KEY(kb_Key6, 'v'),
-        KEY(kb_KeySub, 'w'),
-        KEY(kb_KeySto, 'x'),
-        KEY(kb_Key1, 'y'),
-        KEY(kb_Key2, 'z'),
-        KEY(kb_Key0, ' '),
-        KEY(kb_KeyChs, '?'),
-        KEY(kb_KeyAdd, '"'),
-        KEY(kb_KeyEnter, '\n'),
+        MAP_KEY(kb_KeyMath, 'a'),
+        MAP_KEY(kb_KeyApps, 'b'),
+        MAP_KEY(kb_KeyPrgm, 'c'),
+        MAP_KEY(kb_KeyRecip, 'd'),
+        MAP_KEY(kb_KeySin, 'e'),
+        MAP_KEY(kb_KeyCos, 'f'),
+        MAP_KEY(kb_KeyTan, 'g'),
+        MAP_KEY(kb_KeyPower, 'h'),
+        MAP_KEY(kb_KeySquare, 'i'),
+        MAP_KEY(kb_KeyComma, 'j'),
+        MAP_KEY(kb_KeyLParen, 'k'),
+        MAP_KEY(kb_KeyRParen, 'l'),
+        MAP_KEY(kb_KeyDiv, 'm'),
+        MAP_KEY(kb_KeyLog, 'n'),
+        MAP_KEY(kb_Key7, 'o'),
+        MAP_KEY(kb_Key8, 'p'),
+        MAP_KEY(kb_Key9, 'q'),
+        MAP_KEY(kb_KeyMul, 'r'),
+        MAP_KEY(kb_KeyLn, 's'),
+        MAP_KEY(kb_Key4, 't'),
+        MAP_KEY(kb_Key5, 'u'),
+        MAP_KEY(kb_Key6, 'v'),
+        MAP_KEY(kb_KeySub, 'w'),
+        MAP_KEY(kb_KeySto, 'x'),
+        MAP_KEY(kb_Key1, 'y'),
+        MAP_KEY(kb_Key2, 'z'),
+        MAP_KEY(kb_Key0, ' '),
+        MAP_KEY(kb_KeyChs, '?'),
+        MAP_KEY(kb_KeyAdd, '"'),
+        MAP_KEY(kb_KeyEnter, '\n'),
         // From Python app
-        KEY(kb_Key3, '@'),
+        MAP_KEY(kb_Key3, '@'),
         // Custom
-        KEY(kb_KeyDecPnt, ';'),
-        KEY(kb_KeyMode, '\b'),
+        MAP_KEY(kb_KeyDecPnt, ';'),
+        MAP_KEY(kb_KeyMode, '\b'),
 };
-
-#define get_key(keys, lkey) ((keys)[((lkey) >> 8) - 1] & (lkey))
 
 static const char (*get_key_chars(struct terminal_state *term))[8] {
     if(term->mode_2nd) {
@@ -155,103 +153,119 @@ static const char (*get_key_chars(struct terminal_state *term))[8] {
     }
 }
 
-static char convert_to_ctrl(char val) {
-    if(val >= 'a' && val <= 'z')
-        return val - 'a' + 1;
-    else if(val >= 'A' && val <= '[')
-        return val - 'A' + 1;
-    else {
-        dbg_sprintf(dbgerr, "Bad ctrl char '%c'\n", val);
-        return 0;
-    }
+static void handle_arrow_key(struct terminal_state *term, uint8_t key) {
+    const char codes[4] = "BDCA";
+    char seq[] = CSI_SEQ;
+
+    /* Output the CSI escape sequence */
+    seq[2] = codes[key];
+
+    send_input(term, seq, sizeof seq);
 }
 
-void send_input(struct terminal_state *term, const char *data, size_t len) {
-    if(len && term->input_callback) {
-        (*term->input_callback)(data, len, term->callback_data);
+static void handle_control_keypress(struct terminal_state *term, char val) {
+    if(val >= '@' && val <= '_') {
+        val -= '@';
+    } else if(val >= 'a' && val <= 'z') {
+        val -= 'a' - 1;
     }
+    send_input(term, &val, 1);
 }
 
-static void handle_arrow_keys(struct terminal_state *term, const kb_key_t *keys) {
-    for(uint8_t i = 0; i < 4; i++) {
-        if(keys[6] & (1 << i)) {
-            const char codes[4] = "BDCA";
-            char seq[3] = CSI_SEQ;
+#define LKEY(group, key) (((group) << 8) | (1 << (key)))
 
-            /* Output the CSI escape sequence */
-            seq[2] = codes[i];
+static void handle_keypress(struct terminal_state *term, uint8_t group, uint8_t key) {
+    const char (*key_chars)[8] = get_key_chars(term);
+    char val = key_chars[group][key];
 
-            send_input(term, seq, sizeof seq);
+    if(kb_IsDown(kb_KeyYequ)) {
+        if(LKEY(group, key) == kb_KeyWindow) {
+            send_stty(term);
         }
+        handle_control_keypress(term, val);
+        return;
+    }
+
+    if(val) {
+        send_input(term, &val, 1);
+        return;
+    }
+
+    if(group == GROUP(kb_KeyDown)) {
+        handle_arrow_key(term, key);
+        return;
+    }
+
+    switch(LKEY(group, key)) {
+        // todo: visual indicators
+        case kb_Key2nd:
+            term->mode_2nd = !term->mode_2nd;
+            break;
+        case kb_KeyAlpha:
+            term->mode_alpha = !term->mode_alpha;
+            break;
+        case kb_KeyDel: {
+            const char seq_del[] = CSI_SEQ "3~";
+            send_input(term, seq_del, strlen(seq_del));
+            break;
+        }
+        case kb_KeyGraph:
+            menu(term);
+            break;
+        default:
+            break;
     }
 }
 
-static void send_stty(struct terminal_state *term) {
-    char buf[50];
-    size_t len = sprintf(buf, "stty rows %2u cols %2u\n",
-                         term->rows, term->cols);
-    send_input(term, buf, len);
+void key_repeat(struct terminal_state *term, kb_lkey_t last_key) {
+    static kb_lkey_t held_key = 0;
+
+    if(last_key) {
+        held_key = last_key;
+        timer_Disable(1);
+        timer_Set(1, term->settings->repeat_delay);
+        timer_SetReload(1, term->settings->repeat_rate);
+        timer_AckInterrupt(1, TIMER_RELOADED);
+        timer_Enable(1, TIMER_32K, TIMER_0INT, TIMER_DOWN);
+    }
+
+    if(!held_key) return;
+
+    if(!kb_IsDown(held_key)) {
+        held_key = 0;
+        return;
+    }
+
+    if(timer_ChkInterrupt(1, TIMER_RELOADED)) {
+        timer_AckInterrupt(1, TIMER_RELOADED);
+        handle_keypress(term, GROUP(held_key), KEY(held_key));
+    }
 }
 
 void process_input(struct terminal_state *term) {
     kb_Scan();
 
     kb_key_t keys[7];
-    for(uint8_t i = 0; i < 7; i++) {
-        keys[i] = kb_Data[i + 1] & ~term->held_keys[i];
-        term->held_keys[i] = kb_Data[i + 1];
-    }
-
-    /* Handle F5 (menu) key */
-    if(get_key(keys, kb_KeyGraph)) {
-        menu(term);
-        return;
-    }
-
-    /* Handle 2nd key */
-    if(get_key(keys, kb_Key2nd)) {
-        term->mode_2nd = !term->mode_2nd;
-        // todo: add visual indicator
-    }
-
-    /* Handle alpha key */
-    if(get_key(keys, kb_KeyAlpha)) {
-        term->mode_alpha = !term->mode_alpha;
-        // todo: add visual indicator
-    }
-
-    handle_arrow_keys(term, keys);
-
-    /* Handle F1+window key (send stty command) */
-    if(kb_IsDown(kb_KeyYequ) && get_key(keys, kb_KeyWindow)) {
-        send_stty(term);
+    for(uint8_t group = 1; group < 8; group++) {
+        uint8_t data = kb_Data[group];
+        keys[group - 1] = data & ~term->held_keys[group - 1];
+        term->held_keys[group - 1] = data;
     }
 
     /* Handle regular keypresses */
     /* Check each keypad group */
-    for(uint8_t i = 0; i < 6; i++) {
+    kb_lkey_t last_key = 0;
+    for(uint8_t group = 1; group < 8; group++) {
+        uint8_t group_data = keys[group - 1];
+        if(!group_data) continue;
         /* Check each bit of the group */
-        for(int j = 0; j < 8; j++) {
+        for(uint8_t key = 0; key < 8; key++) {
             /* Check if key is pressed */
-            if(keys[i] & (1 << j)) {
-                const char (*key_chars)[8] = get_key_chars(term);
-
-                char val = key_chars[i][j];
-
-                /* Check if F1, the "ctrl key" is pressed */
-                if(kb_IsDown(kb_KeyYequ)) {
-                    val = convert_to_ctrl(val);
-                }
-
-                if(val) {
-                    send_input(term, &val, 1);
-                }
+            if(group_data & (1 << key)) {
+                handle_keypress(term, group, key);
+                last_key = LKEY(group, key);
             }
         }
     }
-
-    if(get_key(keys, kb_KeyDel)) {
-        const char seq_del[] = CSI_SEQ "3~";
-        send_input(term, seq_del, strlen(seq_del));
-    }
+    key_repeat(term, last_key);
 }
