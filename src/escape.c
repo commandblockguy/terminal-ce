@@ -421,7 +421,16 @@ bool process_esc_sequence(struct terminal_state *term, char *seq, uint8_t len) {
 	    }
 
 		default:
-			dbg_sprintf(dbgerr, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);
-			return false;
+            if(seq[0] >= ' ' && seq[0] <= '/') {
+                if(seq[len - 1] < '0') return true;
+                switch(seq[len - 1]) {
+                    default:
+                        dbg_printf("Unknown nF escape sequence: ESC %c ... %c\n", seq[0], seq[len - 1]);
+                }
+                return false;
+            } else {
+                dbg_sprintf(dbgerr, "Unknown ESC sequence %c (%x)\n", seq[0], seq[0]);
+                return false;
+            }
 	}
 }
