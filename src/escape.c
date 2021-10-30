@@ -386,6 +386,10 @@ bool process_esc_sequence(struct terminal_state *term, char *seq, uint8_t len) {
 			}
 			return false;
 
+        case 'c': /* RIS */
+            reset_term(term);
+            return false;
+
 		case '7':  /* DECSC */
 		    /* Save current state */
 			term->backup.csr_x = term->csr_x;

@@ -4,6 +4,7 @@
 #include <fontlibc.h>
 #include <graphx.h>
 #include <stdio.h>
+#include <debug.h>
 
 #include "escape.h"
 
@@ -78,18 +79,24 @@ void init_term(struct terminal_state *term, const struct settings *settings) {
 	term->cols = LCD_WIDTH / term->char_width;
 	term->rows = LCD_HEIGHT / term->char_height;
 
-	term->scroll_top = 1;
-	term->scroll_bottom = term->rows;
-
-    memset(&term->mode, 0, sizeof term->mode);
-	term->mode.decawm = true;
-	term->mode.decarm = true;
-	term->mode.dectecm = true;
-
-	term->graphics.view_offset = 0;
-
     set_cursor_image(term->char_width, term->char_height);
 
+    reset_term(term);
+}
+
+void reset_term(struct terminal_state *term) {
+    term->scroll_top = 1;
+    term->scroll_bottom = term->rows;
+
+    memset(&term->mode, 0, sizeof term->mode);
+    term->mode.decawm = true;
+    term->mode.decarm = true;
+    term->mode.dectecm = true;
+
+    memset(gfx_vram, 0, LCD_SIZE);
+    term->graphics.view_offset = 0;
+
+    update_view_pos(term);
     set_cursor_pos(term, 1, 1);
 }
 

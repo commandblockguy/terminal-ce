@@ -80,6 +80,7 @@ void update_cursor(struct terminal_state *term);
 void scroll_down(struct terminal_state *term);
 
 void init_term(struct terminal_state *term, const struct settings *settings);
+void reset_term(struct terminal_state *term);
 
 void send_stty(struct terminal_state *term);
 

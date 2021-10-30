@@ -55,6 +55,8 @@ int main(void) {
     init_term(&term, &settings);
     init_serial(&term);
 
+    write_string(&term, "Waiting for device...\r\n");
+
     while(!kb_IsDown(kb_KeyClear)) {
         process_input(&term);
         process_serial(&term);

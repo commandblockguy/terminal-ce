@@ -1,8 +1,6 @@
 #include "serial.h"
 
 #include <stddef.h>
-#include <stdio.h>
-#include <debug.h>
 
 #include <usbdrvce.h>
 #include <srldrvce.h>
@@ -26,7 +24,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
     const struct event_callback_data *cb_data = callback_data;
     if(event == USB_DEVICE_CONNECTED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) {
         usb_device_t device = event_data;
-        write_string(cb_data->term, "connected\r\n");
+        write_string(cb_data->term, "connected, enabling device...\r\n");
         usb_ResetDevice(device);
     }
     if(event == USB_HOST_CONFIGURE_EVENT || (event == USB_DEVICE_ENABLED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE))) {
@@ -53,12 +51,15 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
                 write_string(cb_data->term, "Error initting serial\r\n");
 #endif
             } else {
+                reset_term(cb_data->term);
                 *cb_data->has_device = true;
             }
         }
     }
-    if(event == USB_DEVICE_DISCONNECTED_EVENT) {
-        dbg_printf("Device disconnected.\n");
+    if(event == USB_DEVICE_DISCONNECTED_EVENT &&
+       *cb_data->has_device &&
+       event_data == cb_data->srl->dev) {
+        write_string(cb_data->term, "Device disconnected\r\n");
         *cb_data->has_device = false;
     }
     return USB_SUCCESS;
