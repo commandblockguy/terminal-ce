@@ -1,6 +1,7 @@
 #include "serial.h"
 
 #include <stddef.h>
+#include <stdio.h>
 
 #include <usbdrvce.h>
 #include <srldrvce.h>
@@ -22,6 +23,9 @@ struct srl_callback_data {
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data,
                                     usb_callback_data_t *callback_data) {
     const struct event_callback_data *cb_data = callback_data;
+    usb_error_t err;
+    if ((err = srl_UsbEventCallback(event, event_data, callback_data)) != USB_SUCCESS)
+        return err;
     if(event == USB_DEVICE_CONNECTED_EVENT && !(usb_GetRole() & USB_ROLE_DEVICE)) {
         usb_device_t device = event_data;
         write_string(cb_data->term, "connected, enabling device...\r\n");
